@@ -1,0 +1,131 @@
+name: Build Lucky Block (Forge 1.20.1)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Forge 1.20.1 project discovery/extraction must happen before Gradle setup.
+      # Prefer the specifically named Forge archive so a NeoForge ZIP or old backup
+      # cannot be selected accidentally.
+      - name: Find or extract Forge 1.20.1 project
+        id: project
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          project_is_forge_1201() {
+            local build_file="$1"
+            local project_dir
+            project_dir="$(dirname "$build_file")"
+            [[ "$project_dir" == "$build_file" ]] && project_dir='.'
+            [[ -f "$project_dir/gradle.properties" ]] || return 1
+            grep -q 'net\.minecraftforge\.gradle' "$build_file" || return 1
+            grep -Eq '^minecraft_version=1\.20\.1$' "$project_dir/gradle.properties" || return 1
+            return 0
+          }
+
+          archive_is_forge_1201() {
+            local archive="$1"
+            local entry dir props
+            while IFS= read -r entry; do
+              [[ "$entry" =~ (^|/)build\.gradle(\.kts)?$ ]] || continue
+              unzip -p "$archive" "$entry" 2>/dev/null | grep -q 'net\.minecraftforge\.gradle' || continue
+              dir="${entry%/*}"
+              [[ "$dir" == "$entry" ]] && dir=''
+              props="${dir:+$dir/}gradle.properties"
+              unzip -Z1 "$archive" | grep -Fxq "$props" || continue
+              unzip -p "$archive" "$props" 2>/dev/null | grep -Eq '^minecraft_version=1\.20\.1$' || continue
+              return 0
+            done < <(unzip -Z1 "$archive")
+            return 1
+          }
+
+          project_build=''
+          # If the repository already has this Forge project at its root, use it.
+          if [[ -f build.gradle ]] && project_is_forge_1201 build.gradle; then
+            project_build='./build.gradle'
+          else
+            # Otherwise select only a ZIP proven to contain Forge 1.20.1, not NeoForge.
+            archive=''
+            preferred='./luckyblockmod-forge-1.20.1.zip'
+            if [[ -f "$preferred" ]] && archive_is_forge_1201 "$preferred"; then
+              archive="$preferred"
+            else
+              while IFS= read -r -d '' candidate; do
+                if archive_is_forge_1201 "$candidate"; then
+                  archive="$candidate"
+                  break
+                fi
+              done < <(find . \
+                -path './.git' -prune -o \
+                -path './.ci-unpacked' -prune -o \
+                -type f -iname '*.zip' -print0 | sort -z)
+            fi
+
+            if [[ -z "$archive" ]]; then
+              echo 'ERROR: No Forge 1.20.1 source project found.'
+              echo 'Upload extracted Forge source, or add luckyblockmod-forge-1.20.1.zip to the repository.'
+              find . -path './.git' -prune -o -path './.ci-unpacked' -prune -o -type f -print | sort | head -160
+              exit 1
+            fi
+
+            mkdir -p .ci-unpacked
+            dest=".ci-unpacked/$(basename "${archive%.*}")"
+            rm -rf "$dest"
+            mkdir -p "$dest"
+            echo "Extracting Forge 1.20.1 source: $archive -> $dest"
+            unzip -oq "$archive" -d "$dest"
+
+            while IFS= read -r file; do
+              if project_is_forge_1201 "$file"; then
+                project_build="$file"
+                break
+              fi
+            done < <(find "$dest" \
+              -type d \( -name .git -o -name .gradle -o -name build \) -prune -o \
+              -type f \( -name build.gradle -o -name build.gradle.kts \) -print | sort)
+          fi
+
+          if [[ -z "$project_build" ]]; then
+            echo 'ERROR: The selected source does not contain a Forge 1.20.1 Gradle project.'
+            exit 1
+          fi
+
+          project_dir="$(dirname "$project_build")"
+          [[ "$project_dir" == "$project_build" ]] && project_dir='.'
+          test -d "$project_dir/src/main/java" || { echo "ERROR: $project_dir/src/main/java is missing."; exit 1; }
+          test -f "$project_dir/settings.gradle" || test -f "$project_dir/settings.gradle.kts" || { echo "ERROR: settings.gradle is missing in $project_dir."; exit 1; }
+          echo "dir=$project_dir" >> "$GITHUB_OUTPUT"
+          echo "Forge 1.20.1 project found at: $project_dir"
+
+      - name: Set up Gradle 8.8
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.8'
+
+      - name: Build mod
+        run: gradle --no-daemon --stacktrace -p "${{ steps.project.outputs.dir }}" clean build
+
+      - name: Upload Forge mod JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: luckyblockmod-forge-1.20.1
+          path: ${{ steps.project.outputs.dir }}/build/libs/*.jar
+          if-no-files-found: error
