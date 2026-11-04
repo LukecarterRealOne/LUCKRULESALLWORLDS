@@ -1,0 +1,21 @@
+name: mapdump
+on: push
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.8
+      - name: List srg tasks
+        run: gradle tasks --all --no-daemon 2>&1 | grep -i -E "srg|mcp|mapping" || true
+      - name: Create mappings
+        run: gradle createSrgToMcp createMcpToSrg --no-daemon --stacktrace --continue || true
+      - name: Dump
+        run: python3 scripts/dump_map.py
