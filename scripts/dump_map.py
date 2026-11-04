@@ -1,39 +1,30 @@
-import os, re, sys
+import os, re
 ids = set(l.strip() for l in open('ids.txt') if l.strip())
-print("wanted ids:", len(ids))
-cands = []
-for root in ('build', os.path.expanduser('~/.gradle')):
-    for dp, dn, fn in os.walk(root):
-        for f in fn:
-            if f.endswith(('.srg', '.tsrg', '.tiny')) or f in ('methods.csv', 'fields.csv'):
-                p = os.path.join(dp, f)
-                try:
-                    if os.path.getsize(p) > 200000: cands.append(p)
-                except OSError: pass
-print("candidate mapping files:")
-for p in cands: print("  ", p, os.path.getsize(p))
 idre = re.compile(r'\b[mf]_\d+_\b')
-ident = re.compile(r'^[A-Za-z_][A-Za-z0-9_$]*$')
+files = []
+for dp, dn, fn in os.walk('build'):
+    for f in fn:
+        if f in ('output.srg', 'output.tsrg'):
+            files.append(os.path.join(dp, f))
+print("files:", files)
 found = {}
-for p in cands:
-    if '/.gradle/' in p and 'srg' not in p.lower(): continue
-    shown = 0
-    with open(p, errors='replace') as fh:
-        for line in fh:
-            hit = [i for i in idre.findall(line) if i in ids]
-            if not hit: continue
-            if shown < 3:
-                print("RAW", os.path.basename(p), repr(line.rstrip())[:240]); shown += 1
-            toks = line.split()
-            names = []
-            for t in toks:
-                last = t.rsplit('/', 1)[-1]
-                if t.endswith(':') or t.startswith('('): continue
-                if ident.match(last) and not idre.fullmatch(last):
-                    names.append(last)
-            for i in hit:
-                for n in names:
-                    found.setdefault(i, set()).add(n)
+for p in files:
+    for line in open(p, errors='replace'):
+        line = line.rstrip('\n')
+        if line.startswith(('MD:', 'FD:')):
+            t = line.split()
+            # MD: srgOwner/m_1_ (desc)R mojOwner/name (desc)R     FD: srgOwner/f_1_ mojOwner/name
+            first = t[1].rsplit('/', 1)[-1]
+            second = t[3].rsplit('/', 1)[-1] if line.startswith('MD:') else t[2].rsplit('/', 1)[-1]
+            if first in ids:
+                found.setdefault(first, set()).add(second)
+        elif line.startswith('\t'):
+            t = line.split()
+            # \tmojName (desc) srgId   (methods)     \tmojName srgId (fields)
+            if len(t) >= 2 and t[-1] in ids:
+                found.setdefault(t[-1], set()).add(t[0])
 print("resolved:", len(found), "of", len(ids))
+amb = {i: n for i, n in found.items() if len(n) > 1}
+print("ambiguous:", amb)
 for i in sorted(found): print("MAP", i, " ".join(sorted(found[i])))
 print("unresolved:", " ".join(sorted(ids - set(found))))
