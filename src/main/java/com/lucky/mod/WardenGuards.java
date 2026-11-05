@@ -208,7 +208,7 @@ public final class WardenGuards {
          double var4 = var1.getX();
          double var6 = var1.getY();
          double var8 = var1.getZ();
-         List var10 = var0.getEntitiesOfClass(
+         List<Mob> var10 = var0.getEntitiesOfClass(
             Mob.class,
             new AABB(var4 - 24.0, var6 - 12.0, var8 - 24.0, var4 + 24.0, var6 + 12.0, var8 + 24.0),
             var1x -> var1x instanceof Enemy && var1x.isAlive() && !friend(var1x, var1) && !wardenClass.isInstance(var1x)

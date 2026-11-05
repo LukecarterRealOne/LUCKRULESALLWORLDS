@@ -412,8 +412,8 @@ public final class GoldenMight {
 
       void orbBolts() {
          double var1 = this.orbRadius(this.t);
-         List var3 = this.targets();
-         List var4 = this.pick(var3, 2);
+         List<LivingEntity> var3 = this.targets();
+         List<LivingEntity> var4 = this.pick(var3, 2);
          if (var4.isEmpty()) {
             for (int var13 = 0; var13 < 2; var13++) {
                double var14 = this.rnd.nextDouble() * Math.PI * 2.0;
@@ -568,7 +568,7 @@ public final class GoldenMight {
       void quasarBeams(int var1) {
          int var2 = (var1 - 245) % 16;
          if (var1 >= 257 && (var2 == 0 || var2 == 5 || var2 == 10)) {
-            List var3 = this.pick(this.targets(), 1);
+            List<LivingEntity> var3 = this.pick(this.targets(), 1);
             if (!var3.isEmpty()) {
                LivingEntity var4 = (LivingEntity)var3.get(0);
                double var5 = var4.getX();
@@ -763,7 +763,7 @@ public final class GoldenMight {
          this.spawn("minecraft:light_blue_stained_glass", this.ox, this.oy, this.oz, this.tag + "_tO", null, var1, 16);
          this.spawn("minecraft:purple_stained_glass", this.ox, this.oy, this.oz, this.tag + "_tM", null, var1, 16);
          this.spawn("minecraft:white_stained_glass", this.ox, this.oy, this.oz, this.tag + "_tI", null, var1, 16);
-         List var2 = this.pick(this.targets(), 40);
+         List<LivingEntity> var2 = this.pick(this.targets(), 40);
 
          for (int var3 = 0; var3 < var2.size(); var3++) {
             LivingEntity var4 = (LivingEntity)var2.get(var3);
