@@ -734,6 +734,10 @@ public final class GoldenMight {
             Fx.helix(this.lv, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, this.ox, this.cy, this.oz, var20 * 0.5, Math.max(8.0, this.oy - this.cy), (double)var1 * 0.3);
          }
 
+         if (var1 % 4 == 0 && var1 >= 520 && var1 < 640) {
+            Shapes.poly4(this.lv, Shapes.Poly.CELL16, this.violet, ParticleTypes.END_ROD, this.ox, this.oy, this.oz, 6.0, (double)var1 * 0.07, 1);
+         }
+
          if (var1 == 640) {
             Fx.shatter(this.lv, this.white, ParticleTypes.REVERSE_PORTAL, ParticleTypes.ELECTRIC_SPARK, ParticleTypes.END_ROD, this.ox, this.oy, this.oz, 8.0, 4.0);
          }

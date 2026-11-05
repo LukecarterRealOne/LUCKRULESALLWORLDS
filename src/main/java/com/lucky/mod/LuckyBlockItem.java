@@ -114,6 +114,11 @@ public class LuckyBlockItem extends Item {
    }
 
    public void castAbility(ServerLevel sw, Player user, int a) {
+      Shapes.signature(sw, user, a);
+      this.castCore(sw, user, a);
+   }
+
+   private void castCore(ServerLevel sw, Player user, int a) {
       switch (a) {
          case 0:
             this.omegaBeam(sw, user);
@@ -1799,6 +1804,8 @@ public class LuckyBlockItem extends Item {
                   3
                );
                Fx.rune(sw, gold, ParticleTypes.REVERSE_PORTAL, center.x, center.y + 0.15, center.z, 14.0 - progress * 6.0, (double)elapsed * 0.12);
+               Shapes.poly4(sw, Shapes.Poly.CELL24, gold, ParticleTypes.END_ROD, frameCenter.x, frameCenter.y, frameCenter.z, size * 0.45, (double)elapsed * 0.09, 1);
+               Shapes.torusKnot(sw, ParticleTypes.END_ROD, frameCenter.x, frameCenter.y, frameCenter.z, size * 0.8, (double)elapsed * 0.1);
                Fx.helix(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 3.0 + (1.0 - progress) * 5.0, 10.0, (double)elapsed * 0.35);
                if (elapsed % 6 == 0) {
                   for (int c = 0; c < 4; c++) {
@@ -2343,6 +2350,7 @@ public class LuckyBlockItem extends Item {
                   3
                );
                Fx.rune(sw, violet, gold, center.x, center.y + 0.2, center.z, 22.0 - progress * 10.0, -(double)elapsed * 0.1);
+               Shapes.armillary(sw, violet, gold, skyCenter.x, skyCenter.y, skyCenter.z, size * 0.8, (double)elapsed * 0.08);
                Fx.sevenStars(sw, ParticleTypes.END_ROD, gold, skyCenter.x, skyCenter.y - 6.0, skyCenter.z, 16.0 - progress * 8.0, (double)elapsed * 0.08);
                Fx.laserMark(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 40.0, (double)elapsed * 0.2);
                Fx.helix(sw, ParticleTypes.END_ROD, ParticleTypes.REVERSE_PORTAL, center.x, center.y, center.z, 5.0 + (1.0 - progress) * 8.0, 22.0, (double)elapsed * 0.3);
