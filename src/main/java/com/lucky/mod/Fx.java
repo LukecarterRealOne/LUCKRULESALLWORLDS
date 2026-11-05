@@ -137,6 +137,7 @@ public class Fx {
       double phase,
       int pointsPerEdge
    ) {
+      halfSize *= 1.0 + 0.05 * Math.sin(phase * 7.0);
       int samples = Math.max(2, Math.min(pointsPerEdge, 4));
       double[][] projected = new double[16][3];
       double ax = phase * 0.91;
@@ -198,7 +199,49 @@ public class Fx {
       }
 
       for (int i = 0; i < 16; i++) {
-         burst(sw, corners, cx + projected[i][0], cy + projected[i][1], cz + projected[i][2], 1, 0.0, 0.0, 0.0, 0.0);
+         burst(sw, corners, cx + projected[i][0], cy + projected[i][1], cz + projected[i][2], 2, 0.07, 0.07, 0.07, 0.01);
+      }
+   }
+
+
+   /** Rotating ground sigil: ring + two counter-rotating triangles (a hexagram) + inner ring. */
+   public static void rune(ServerLevel sw, ParticleOptions particle, ParticleOptions accent, double cx, double cy, double cz, double radius, double phase) {
+      ring(sw, particle, cx, cy, cz, radius, 18);
+      ring(sw, accent, cx, cy + 0.05, cz, radius * 0.55, 18);
+      for (int tri = 0; tri < 2; tri++) {
+         double spin = phase * (tri == 0 ? 1.0 : -1.0) + tri * Math.PI / 3.0;
+         for (int k = 0; k < 3; k++) {
+            double a1 = spin + k * Math.PI * 2.0 / 3.0;
+            double a2 = spin + (k + 1) * Math.PI * 2.0 / 3.0;
+            line(sw, tri == 0 ? particle : accent,
+               cx + Math.cos(a1) * radius, cy + 0.1, cz + Math.sin(a1) * radius,
+               cx + Math.cos(a2) * radius, cy + 0.1, cz + Math.sin(a2) * radius, 4);
+         }
+      }
+   }
+
+   /** Double helix climbing from y0 to y0+height. */
+   public static void helix(ServerLevel sw, ParticleOptions particle, ParticleOptions accent, double cx, double y0, double cz, double radius, double height, double phase) {
+      int steps = 14;
+      for (int i = 0; i < steps; i++) {
+         double t = (double)i / (double)(steps - 1);
+         double a = phase + t * Math.PI * 4.0;
+         double y = y0 + t * height;
+         burst(sw, particle, cx + Math.cos(a) * radius, y, cz + Math.sin(a) * radius, 1, 0.0, 0.0, 0.0, 0.0);
+         burst(sw, accent, cx + Math.cos(a + Math.PI) * radius, y, cz + Math.sin(a + Math.PI) * radius, 1, 0.0, 0.0, 0.0, 0.0);
+      }
+   }
+
+   /** Vertical light pillar. */
+   public static void pillar(ServerLevel sw, ParticleOptions particle, double x, double y1, double y2, double z) {
+      line(sw, particle, x, y1, z, x, y2, z, 6);
+   }
+
+   /** Frame shatters outward: three expanding hypercube shells that spin faster as they fade. */
+   public static void shatter(ServerLevel sw, ParticleOptions a, ParticleOptions b, ParticleOptions c, ParticleOptions d, double cx, double cy, double cz, double startSize, double phase) {
+      for (int i = 0; i < 3; i++) {
+         int k = i;
+         Scheduler.later(1 + i * 3, () -> tesseract(sw, a, b, c, d, cx, cy, cz, startSize * (1.0 + k * 0.9), phase + k * 0.9, 2));
       }
    }
 

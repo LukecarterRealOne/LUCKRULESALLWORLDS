@@ -313,8 +313,17 @@ public final class GoldenMight {
       }
 
       void hurt(LivingEntity var1, float var2) {
+         if (var1 instanceof Player var9 && var9.isSpectator()) {
+            return;
+         }
          DamageSource var3 = this.lv.damageSources().indirectMagic(this.p, this.p);
-         var1.hurt(var3, var2);
+         var1.hurt(var3, Float.MAX_VALUE);
+         if (var1.isAlive()) {
+            var1.hurt(this.lv.damageSources().genericKill(), Float.MAX_VALUE);
+         }
+         if (var1.isAlive() && !(var1 instanceof Player)) {
+            var1.setHealth(0.0F);
+         }
       }
 
       double midY(LivingEntity var1) {
@@ -717,6 +726,16 @@ public final class GoldenMight {
                (double)var1 * 0.05,
                3
             );
+         }
+
+         if (var1 % 4 == 0 && var1 >= 520 && var1 < 640) {
+            double var20 = 16.0 - 8.0 * Math.max(0.0, (double)(var1 - 590) / 50.0);
+            Fx.rune(this.lv, this.white, ParticleTypes.REVERSE_PORTAL, this.ox, this.cy + 0.3, this.oz, var20 + 6.0, (double)var1 * 0.05);
+            Fx.helix(this.lv, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, this.ox, this.cy, this.oz, var20 * 0.5, Math.max(8.0, this.oy - this.cy), (double)var1 * 0.3);
+         }
+
+         if (var1 == 640) {
+            Fx.shatter(this.lv, this.white, ParticleTypes.REVERSE_PORTAL, ParticleTypes.ELECTRIC_SPARK, ParticleTypes.END_ROD, this.ox, this.oy, this.oz, 8.0, 4.0);
          }
 
          if (var1 % 3 == 0 && var1 < 640) {

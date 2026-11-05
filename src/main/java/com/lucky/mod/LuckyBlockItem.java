@@ -1798,7 +1798,13 @@ public class LuckyBlockItem extends Item {
                   (double)elapsed * 0.065,
                   3
                );
+               Fx.rune(sw, gold, ParticleTypes.REVERSE_PORTAL, center.x, center.y + 0.15, center.z, 14.0 - progress * 6.0, (double)elapsed * 0.12);
+               Fx.helix(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 3.0 + (1.0 - progress) * 5.0, 10.0, (double)elapsed * 0.35);
                if (elapsed % 6 == 0) {
+                  for (int c = 0; c < 4; c++) {
+                     double ca = (double)elapsed * 0.1 + c * Math.PI / 2.0;
+                     Fx.pillar(sw, ParticleTypes.END_ROD, center.x + Math.cos(ca) * size * 0.8, center.y, center.z + Math.sin(ca) * size * 0.8, frameCenter.y);
+                  }
                   Fx.burst(sw, ParticleTypes.PORTAL, frameCenter.x, frameCenter.y, frameCenter.z, 7, 0.25, 0.45, 0.25, 0.08);
                   AABB pullZone = new AABB(center, center).inflate(19.0);
 
@@ -1829,6 +1835,9 @@ public class LuckyBlockItem extends Item {
          Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.END_PORTAL_SPAWN, 4.0F, 0.55F);
          Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.GENERIC_EXPLODE, 3.6F, 0.45F);
          Fx.epicImpact(sw, center.add(0.0, 1.2, 0.0), gold, ParticleTypes.ELECTRIC_SPARK, 13.5, 16773222);
+         Fx.shatter(sw, gold, ParticleTypes.REVERSE_PORTAL, ParticleTypes.ELECTRIC_SPARK, ParticleTypes.END_ROD, frameCenter.x, frameCenter.y, frameCenter.z, 4.0, 3.0);
+         Fx.burst(sw, ParticleTypes.FIREWORK, center.x, center.y + 1.0, center.z, 24, 4.0, 2.5, 4.0, 0.35);
+         Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.LIGHTNING_BOLT_THUNDER, 3.0F, 0.6F);
 
          for (int pulse = 0; pulse < 4; pulse++) {
             int index = pulse;
@@ -2332,7 +2341,15 @@ public class LuckyBlockItem extends Item {
                   (double)elapsed * 0.055,
                   3
                );
+               Fx.rune(sw, violet, gold, center.x, center.y + 0.2, center.z, 22.0 - progress * 10.0, -(double)elapsed * 0.1);
+               Fx.helix(sw, ParticleTypes.END_ROD, ParticleTypes.REVERSE_PORTAL, center.x, center.y, center.z, 5.0 + (1.0 - progress) * 8.0, 22.0, (double)elapsed * 0.3);
                if (elapsed % 6 == 0) {
+                  for (int c = 0; c < 6; c++) {
+                     double ca = (double)elapsed * 0.08 + c * Math.PI / 3.0;
+                     Fx.line(sw, c % 2 == 0 ? ParticleTypes.END_ROD : ParticleTypes.ELECTRIC_SPARK,
+                        center.x + Math.cos(ca) * 16.0, center.y + 0.5, center.z + Math.sin(ca) * 16.0,
+                        skyCenter.x, skyCenter.y, skyCenter.z, 6);
+                  }
                   Fx.burst(sw, ParticleTypes.REVERSE_PORTAL, skyCenter.x, skyCenter.y, skyCenter.z, 9, 0.35, 0.65, 0.35, 0.14);
                   AABB liftZone = new AABB(center, center).inflate(22.0);
 
@@ -2375,6 +2392,9 @@ public class LuckyBlockItem extends Item {
          Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.GENERIC_EXPLODE, 4.5F, 0.42F);
          Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.END_PORTAL_SPAWN, 4.5F, 0.35F);
          Fx.epicImpact(sw, center.add(0.0, 2.0, 0.0), violet, ParticleTypes.REVERSE_PORTAL, 17.0, 11897599);
+         Fx.shatter(sw, ParticleTypes.END_ROD, violet, ParticleTypes.ELECTRIC_SPARK, gold, skyCenter.x, skyCenter.y, skyCenter.z, 6.0, 2.0);
+         Fx.burst(sw, ParticleTypes.FIREWORK, skyCenter.x, skyCenter.y, skyCenter.z, 24, 6.0, 4.0, 6.0, 0.5);
+         Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.LIGHTNING_BOLT_THUNDER, 4.0F, 0.5F);
          Fx.burst(sw, ParticleTypes.POOF, skyCenter.x, skyCenter.y, skyCenter.z, 24, 2.4, 2.4, 2.4, 0.18);
          Fx.burst(sw, ParticleTypes.PORTAL, skyCenter.x, skyCenter.y, skyCenter.z, 24, 2.8, 2.8, 2.8, 0.26);
 
