@@ -1810,8 +1810,6 @@ public class LuckyBlockItem extends Item {
       Vec3 center = target.pos();
       Vec3 frameCenter = center.add(0.0, 10.0, 0.0);
       DustParticleOptions gold = new DustParticleOptions(new Vector3f(1.0F, 0.82F, 0.12F), 1.55F);
-      HyperFx hx = HyperFx.spawn(sw, frameCenter.x, frameCenter.y, frameCenter.z, "minecraft:gold_block", "minecraft:amethyst_block", "minecraft:white_concrete", "minecraft:glowstone");
-      Scheduler.later(60, hx::remove);
       Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.WARDEN_SONIC_BOOM, 3.2F, 0.42F);
       Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.AMETHYST_BLOCK_RESONATE, 2.6F, 0.55F);
       Fx.screen(sw, center, 100.0, 0.22F, 0.75F, 10, 16773222);
@@ -1852,8 +1850,6 @@ public class LuckyBlockItem extends Item {
       }
 
       Scheduler.later(46, () -> {
-         hx.update(16.0, 3.0, 4);
-         Scheduler.later(5, hx::remove);
          AABB capture = new AABB(center, center).inflate(18.0);
 
          for (LivingEntity entity : sw.getEntitiesOfClass(LivingEntity.class, capture, e -> !friend(e, user) && e.distanceToSqr(center) <= 324.0)) {
