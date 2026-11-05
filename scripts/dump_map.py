@@ -4,7 +4,7 @@ idre = re.compile(r'\b[mf]_\d+_\b')
 files = []
 for dp, dn, fn in os.walk('build'):
     for f in fn:
-        if f in ('output.srg', 'output.tsrg'):
+        if f in ('output.srg', 'output.tsrg') and 'extractSrg' not in dp:
             files.append(os.path.join(dp, f))
 print("files:", files)
 found = {}
