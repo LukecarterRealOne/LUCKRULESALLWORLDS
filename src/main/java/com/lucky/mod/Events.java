@@ -15,6 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent.Phase;
 import net.minecraftforge.event.TickEvent.PlayerTickEvent;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
@@ -163,6 +164,14 @@ public class Events {
    public static void onGuardRetarget(LivingChangeTargetEvent event) {
       if (event.getEntity().getTags().contains("lbm_ally") && event.getNewTarget() != null && protectedFromGuard(event.getNewTarget())) {
          event.setNewTarget(null);
+      }
+   }
+
+   /** Never bring back leftover hypercube display entities after a save/reload. */
+   @SubscribeEvent
+   public static void onFxJoin(EntityJoinLevelEvent event) {
+      if (event.loadedFromDisk() && event.getEntity().getTags().contains("lbm_fx")) {
+         event.setCanceled(true);
       }
    }
 }

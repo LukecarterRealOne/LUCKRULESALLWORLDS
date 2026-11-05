@@ -1503,6 +1503,33 @@ public class LuckyBlockItem extends Item {
       }
    }
 
+   private static List<java.util.function.Function<ServerLevel, Entity>> SPECIAL_PROJECTILES;
+
+   /** Plain/spectral arrow, an arrow for EVERY registered potion (harming, instant damage, poison...), and ender pearls. */
+   private static List<java.util.function.Function<ServerLevel, Entity>> specialProjectiles() {
+      if (SPECIAL_PROJECTILES == null) {
+         List<java.util.function.Function<ServerLevel, Entity>> l = new ArrayList<>();
+         l.add(w -> EntityType.ARROW.create(w));
+         l.add(w -> EntityType.SPECTRAL_ARROW.create(w));
+         l.add(w -> EntityType.ENDER_PEARL.create(w));
+         for (net.minecraft.world.item.alchemy.Potion potion : ForgeRegistries.POTIONS) {
+            if (potion == net.minecraft.world.item.alchemy.Potions.EMPTY) {
+               continue;
+            }
+            l.add(w -> {
+               net.minecraft.world.entity.projectile.Arrow a = EntityType.ARROW.create(w);
+               if (a != null) {
+                  a.setEffectsFromItem(net.minecraft.world.item.alchemy.PotionUtils.setPotion(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.TIPPED_ARROW), potion));
+                  a.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.DISALLOWED;
+               }
+               return a;
+            });
+         }
+         SPECIAL_PROJECTILES = l;
+      }
+      return SPECIAL_PROJECTILES;
+   }
+
    private void arrowStorm(ServerLevel sw, Player user) {
       msg(user, "\u00a7e\u00a7lVANILLA + MODDED PROJECTILE RAIN!");
       LuckyBlockItem.Target tg = pickTarget(sw, user, 100.0);
@@ -1518,12 +1545,16 @@ public class LuckyBlockItem extends Item {
                Fx.ring(sw, red, c.x, c.y + 0.3, c.z, 12.0, 24);
             }
 
-            for (int k = 0; k < 4; k++) {
-               EntityType<?> type = projectileTypes.get(sw.random.nextInt(projectileTypes.size()));
+            for (int k = 0; k < 6; k++) {
                Entity spawned = null;
 
                try {
-                  spawned = type.create(sw);
+                  if (sw.random.nextInt(100) < 55) {
+                     List<java.util.function.Function<ServerLevel, Entity>> specials = specialProjectiles();
+                     spawned = specials.get(sw.random.nextInt(specials.size())).apply(sw);
+                  } else {
+                     spawned = projectileTypes.get(sw.random.nextInt(projectileTypes.size())).create(sw);
+                  }
                } catch (Exception var14) {
                }
 
@@ -1531,7 +1562,9 @@ public class LuckyBlockItem extends Item {
                   double ox = (sw.random.nextDouble() - 0.5) * 20.0;
                   double oz = (sw.random.nextDouble() - 0.5) * 20.0;
                   projectile.setPos(c.x + ox, c.y + 24.0 + sw.random.nextDouble() * 12.0, c.z + oz);
-                  projectile.setOwner(user);
+                  if (!(projectile instanceof net.minecraft.world.entity.projectile.ThrownEnderpearl)) {
+                     projectile.setOwner(user);
+                  }
                   projectile.setDeltaMovement((sw.random.nextDouble() - 0.5) * 0.35, -2.8 - sw.random.nextDouble(), (sw.random.nextDouble() - 0.5) * 0.35);
                   sw.addFreshEntity(projectile);
                } else if (spawned != null) {
@@ -1777,11 +1810,16 @@ public class LuckyBlockItem extends Item {
       Vec3 center = target.pos();
       Vec3 frameCenter = center.add(0.0, 10.0, 0.0);
       DustParticleOptions gold = new DustParticleOptions(new Vector3f(1.0F, 0.82F, 0.12F), 1.55F);
+      HyperFx hx = HyperFx.spawn(sw, frameCenter.x, frameCenter.y, frameCenter.z, "minecraft:gold_block", "minecraft:amethyst_block", "minecraft:white_concrete", "minecraft:glowstone");
+      Scheduler.later(60, hx::remove);
       Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.WARDEN_SONIC_BOOM, 3.2F, 0.42F);
       Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.AMETHYST_BLOCK_RESONATE, 2.6F, 0.55F);
       Fx.screen(sw, center, 100.0, 0.22F, 0.75F, 10, 16773222);
       Fx.ring(sw, gold, center.x, center.y + 0.15, center.z, 5.0, 18);
       Fx.ring(sw, ParticleTypes.REVERSE_PORTAL, center.x, center.y + 0.25, center.z, 8.0, 18);
+
+      Hypercube hc = new Hypercube(sw, frameCenter, "minecraft:glowstone", "minecraft:gold_block", "minecraft:yellow_concrete", "minecraft:white_concrete");
+      Scheduler.later(120, hc::remove);
 
       for (int tick = 0; tick <= 42; tick += 2) {
          int elapsed = tick;
@@ -1790,22 +1828,8 @@ public class LuckyBlockItem extends Item {
             () -> {
                double progress = (double)elapsed / 42.0;
                double size = 13.5 - progress * 9.7;
-               Fx.tesseract(
-                  sw,
-                  gold,
-                  ParticleTypes.REVERSE_PORTAL,
-                  ParticleTypes.ELECTRIC_SPARK,
-                  ParticleTypes.END_ROD,
-                  frameCenter.x,
-                  frameCenter.y,
-                  frameCenter.z,
-                  size,
-                  (double)elapsed * 0.065,
-                  3
-               );
+               hc.update(size, (double)elapsed * 0.07);
                Fx.rune(sw, gold, ParticleTypes.REVERSE_PORTAL, center.x, center.y + 0.15, center.z, 14.0 - progress * 6.0, (double)elapsed * 0.12);
-               Shapes.poly4(sw, Shapes.Poly.CELL24, gold, ParticleTypes.END_ROD, frameCenter.x, frameCenter.y, frameCenter.z, size * 0.45, (double)elapsed * 0.09, 1);
-               Shapes.torusKnot(sw, ParticleTypes.END_ROD, frameCenter.x, frameCenter.y, frameCenter.z, size * 0.8, (double)elapsed * 0.1);
                Fx.helix(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 3.0 + (1.0 - progress) * 5.0, 10.0, (double)elapsed * 0.35);
                if (elapsed % 6 == 0) {
                   for (int c = 0; c < 4; c++) {
@@ -1828,6 +1852,8 @@ public class LuckyBlockItem extends Item {
       }
 
       Scheduler.later(46, () -> {
+         hx.update(16.0, 3.0, 4);
+         Scheduler.later(5, hx::remove);
          AABB capture = new AABB(center, center).inflate(18.0);
 
          for (LivingEntity entity : sw.getEntitiesOfClass(LivingEntity.class, capture, e -> !friend(e, user) && e.distanceToSqr(center) <= 324.0)) {
@@ -1842,7 +1868,16 @@ public class LuckyBlockItem extends Item {
          Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.END_PORTAL_SPAWN, 4.0F, 0.55F);
          Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.GENERIC_EXPLODE, 3.6F, 0.45F);
          Fx.epicImpact(sw, center.add(0.0, 1.2, 0.0), gold, ParticleTypes.ELECTRIC_SPARK, 13.5, 16773222);
-         Fx.shatter(sw, gold, ParticleTypes.REVERSE_PORTAL, ParticleTypes.ELECTRIC_SPARK, ParticleTypes.END_ROD, frameCenter.x, frameCenter.y, frameCenter.z, 4.0, 3.0);
+         for (int k = 0; k < 7; k++) {
+            int kk = k;
+            Scheduler.later(kk, () -> {
+               if (kk == 6) {
+                  hc.remove();
+               } else {
+                  hc.update(3.8 * (1.0 + kk * 0.7), 3.0 + kk * 0.45);
+               }
+            });
+         }
          Fx.burst(sw, ParticleTypes.FIREWORK, center.x, center.y + 1.0, center.z, 24, 4.0, 2.5, 4.0, 0.35);
          Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.LIGHTNING_BOLT_THUNDER, 3.0F, 0.6F);
 
@@ -2321,6 +2356,8 @@ public class LuckyBlockItem extends Item {
          18
       );
       Fx.laserMark(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 40.0, 0.0);
+      HyperFx hx2 = HyperFx.spawn(sw, skyCenter.x, skyCenter.y, skyCenter.z, "minecraft:white_concrete", "minecraft:purple_concrete", "minecraft:gold_block", "minecraft:sea_lantern");
+      Scheduler.later(60, hx2::remove);
       AABB captureZone = new AABB(center, center).inflate(22.0);
 
       for (LivingEntity entity : sw.getEntitiesOfClass(LivingEntity.class, captureZone, e -> !friend(e, user) && e.distanceToSqr(center) <= 484.0)) {
@@ -2336,21 +2373,8 @@ public class LuckyBlockItem extends Item {
             () -> {
                double progress = (double)elapsed / 42.0;
                double size = 21.5 - progress * 17.5;
-               Fx.tesseract(
-                  sw,
-                  ParticleTypes.END_ROD,
-                  violet,
-                  ParticleTypes.ELECTRIC_SPARK,
-                  gold,
-                  skyCenter.x,
-                  skyCenter.y,
-                  skyCenter.z,
-                  size,
-                  (double)elapsed * 0.055,
-                  3
-               );
+               hx2.update(size, (double)elapsed * 0.055, 3);
                Fx.rune(sw, violet, gold, center.x, center.y + 0.2, center.z, 22.0 - progress * 10.0, -(double)elapsed * 0.1);
-               Shapes.armillary(sw, violet, gold, skyCenter.x, skyCenter.y, skyCenter.z, size * 0.8, (double)elapsed * 0.08);
                Fx.sevenStars(sw, ParticleTypes.END_ROD, gold, skyCenter.x, skyCenter.y - 6.0, skyCenter.z, 16.0 - progress * 8.0, (double)elapsed * 0.08);
                Fx.laserMark(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 40.0, (double)elapsed * 0.2);
                Fx.helix(sw, ParticleTypes.END_ROD, ParticleTypes.REVERSE_PORTAL, center.x, center.y, center.z, 5.0 + (1.0 - progress) * 8.0, 22.0, (double)elapsed * 0.3);
@@ -2386,6 +2410,8 @@ public class LuckyBlockItem extends Item {
       }
 
       Scheduler.later(46, () -> {
+         hx2.update(26.0, 2.0, 4);
+         Scheduler.later(5, hx2::remove);
          AABB finalZone = new AABB(center, center).inflate(22.0);
 
          for (Projectile projectile : sw.getEntitiesOfClass(Projectile.class, finalZone, p -> p.getOwner() != user && !p.getTags().contains("lbm_ally"))) {
