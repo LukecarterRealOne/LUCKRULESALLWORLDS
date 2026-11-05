@@ -16,6 +16,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent.Phase;
 import net.minecraftforge.event.TickEvent.PlayerTickEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -130,6 +135,34 @@ public class Events {
          }
 
          return;
+      }
+   }
+
+   private static boolean protectedFromGuard(Entity e) {
+      return e instanceof Player || e.getTags().contains("lbm_ally");
+   }
+
+   /** Summoned wardens never keep a player or ally as a target: wipe brain memory + anger every other tick. */
+   @SubscribeEvent
+   public static void onGuardTick(LivingEvent.LivingTickEvent event) {
+      if (!(event.getEntity() instanceof Warden warden) || warden.level().isClientSide) return;
+      if (!warden.getTags().contains("lbm_ally") || warden.tickCount % 2 != 0) return;
+      for (Player p : warden.level().players()) {
+         warden.clearAnger(p);
+      }
+      LivingEntity t = warden.getTarget();
+      if (t != null && protectedFromGuard(t)) {
+         warden.clearAnger(t);
+         warden.setTarget(null);
+         warden.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
+         warden.getBrain().eraseMemory(MemoryModuleType.ANGRY_AT);
+      }
+   }
+
+   @SubscribeEvent
+   public static void onGuardRetarget(LivingChangeTargetEvent event) {
+      if (event.getEntity().getTags().contains("lbm_ally") && event.getNewTarget() != null && protectedFromGuard(event.getNewTarget())) {
+         event.setNewTarget(null);
       }
    }
 }

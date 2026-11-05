@@ -24,7 +24,7 @@ import net.minecraftforge.registries.RegistryObject;
 public class LuckyBlockMod {
    public static final String MOD_ID = "luckyblockmod";
    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, "luckyblockmod");
-   public static final RegistryObject<Item> LUCKY_BLOCK = ITEMS.register("lucky_block", () -> new LuckyBlockItem(new Properties().stacksTo(1)));
+   public static final RegistryObject<Item> LUCKY_BLOCK = ITEMS.register("lucky_block", () -> new LuckyBlockItem(new Properties().stacksTo(1).rarity(net.minecraft.world.item.Rarity.EPIC)));
    public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, "luckyblockmod");
    public static final RegistryObject<CreativeModeTab> TAB = TABS.register(
       "main",

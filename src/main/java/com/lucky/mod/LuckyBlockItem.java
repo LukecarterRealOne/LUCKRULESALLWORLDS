@@ -2489,4 +2489,9 @@ public class LuckyBlockItem extends Item {
 
    private static record Target(Vec3 pos, LivingEntity entity) {
    }
+
+   @Override
+   public boolean isFoil(net.minecraft.world.item.ItemStack stack) {
+      return true;
+   }
 }

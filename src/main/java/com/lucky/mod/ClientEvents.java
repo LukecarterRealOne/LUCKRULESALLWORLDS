@@ -43,6 +43,21 @@ public class ClientEvents {
 
    @SubscribeEvent
    public static void onGui(Post event) {
+      net.minecraft.client.player.LocalPlayer lp = net.minecraft.client.Minecraft.getInstance().player;
+      if (lp != null && net.minecraft.client.Minecraft.getInstance().screen == null
+         && (lp.getMainHandItem().is((net.minecraft.world.item.Item)LuckyBlockMod.LUCKY_BLOCK.get())
+            || lp.getOffhandItem().is((net.minecraft.world.item.Item)LuckyBlockMod.LUCKY_BLOCK.get()))) {
+         int w = event.getWindow().getGuiScaledWidth();
+         int h = event.getWindow().getGuiScaledHeight();
+         float pulse = 0.5F + 0.5F * (float)Math.sin((lp.tickCount + event.getPartialTick()) * 0.08F);
+         int a = (int)(18.0F + 22.0F * pulse);
+         for (int i = 0; i < 10; i++) {
+            int al = a * (10 - i) / 10;
+            int c = al << 24 | 0xFFC020;
+            event.getGuiGraphics().fill(i * 3, 0, i * 3 + 3, h, c);
+            event.getGuiGraphics().fill(w - i * 3 - 3, 0, w - i * 3, h, c);
+         }
+      }
       if (!(ClientState.flash <= 0.01F)) {
          int a = (int)(Math.min(1.0F, ClientState.flash) * 200.0F);
          int argb = a << 24 | ClientState.flashColor & 16777215;
