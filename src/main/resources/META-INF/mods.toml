@@ -6,9 +6,7 @@ license="MIT"
 modId="luckyblockmod"
 version="2.3.0-forge.1.20.1"
 displayName="Lucky Block Ascension"
-description='''Lucky Block Ascension for Minecraft Forge 1.20.1: 36 powers, passive double-speed flight, projected 4D Tesseract effects, cinematic impacts, ally commands, and a searchable Item Wish catalogue, selected-dimension travel, and dimension banishment. Golden Might (orb, quasar, gamma ray burst, tesseract) and Warden guardians. Press G for the ability menu.
-
-Credits: the laser-marker / seven-star / beam-column effect style is inspired by "The Shooting Star (Demo)" by rimuru.dev (tiktok.com/@rimuru.dev) - thanks to them.'''
+description='''Lucky Block Ascension for Minecraft Forge 1.20.1: 36 powers, passive double-speed flight, projected 4D Tesseract effects, cinematic impacts, ally commands, and a searchable Item Wish catalogue, selected-dimension travel, and dimension banishment. Golden Might (orb, quasar, gamma ray burst, tesseract) and Warden guardians. Press G for the ability menu.'''
 
 [[dependencies.luckyblockmod]]
 modId="forge"

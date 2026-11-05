@@ -246,8 +246,7 @@ public class Fx {
    }
 
 
-   /* Orbital-strike style helpers. Original code; the look (laser marker, seven-star formation, descending beam column)
-      is inspired by "The Shooting Star (Demo)" by rimuru.dev (tiktok.com/@rimuru.dev) - thanks to them for the idea. */
+   /* Orbital-strike style helpers (original code). */
 
    /** Thin red/gold marker laser from the sky down onto a target plus a small locking ring. */
    public static void laserMark(ServerLevel sw, ParticleOptions beam, ParticleOptions ringParticle, double x, double y, double z, double height, double phase) {
