@@ -112,6 +112,7 @@ public class AbilityScreen extends Screen {
       g.fillGradient(0, 0, this.width, this.height, 0x66301E00, 0xAA050300);
       g.fill(this.width / 2 - 90, 48, this.width / 2 + 90, 49, 0xCCFFC83A);
       super.render(g, mouseX, mouseY, partialTick);
+      g.drawString(this.font, "FX thanks to rimuru.dev (The Shooting Star)", 4, this.height - 10, 0x88FFC83A, false);
       g.drawCenteredString(this.font, this.title, this.width / 2, 10, 16777215);
       g.drawCenteredString(this.font, Component.literal("Choose a power  \u2022  compact mode"), this.width / 2, 25, 16767050);
       g.drawCenteredString(

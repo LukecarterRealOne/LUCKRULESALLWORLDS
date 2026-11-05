@@ -2313,6 +2313,7 @@ public class LuckyBlockItem extends Item {
          center.z + 18.0,
          18
       );
+      Fx.laserMark(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 40.0, 0.0);
       AABB captureZone = new AABB(center, center).inflate(22.0);
 
       for (LivingEntity entity : sw.getEntitiesOfClass(LivingEntity.class, captureZone, e -> !friend(e, user) && e.distanceToSqr(center) <= 484.0)) {
@@ -2342,6 +2343,8 @@ public class LuckyBlockItem extends Item {
                   3
                );
                Fx.rune(sw, violet, gold, center.x, center.y + 0.2, center.z, 22.0 - progress * 10.0, -(double)elapsed * 0.1);
+               Fx.sevenStars(sw, ParticleTypes.END_ROD, gold, skyCenter.x, skyCenter.y - 6.0, skyCenter.z, 16.0 - progress * 8.0, (double)elapsed * 0.08);
+               Fx.laserMark(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 40.0, (double)elapsed * 0.2);
                Fx.helix(sw, ParticleTypes.END_ROD, ParticleTypes.REVERSE_PORTAL, center.x, center.y, center.z, 5.0 + (1.0 - progress) * 8.0, 22.0, (double)elapsed * 0.3);
                if (elapsed % 6 == 0) {
                   for (int c = 0; c < 6; c++) {
@@ -2392,6 +2395,10 @@ public class LuckyBlockItem extends Item {
          Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.GENERIC_EXPLODE, 4.5F, 0.42F);
          Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.END_PORTAL_SPAWN, 4.5F, 0.35F);
          Fx.epicImpact(sw, center.add(0.0, 2.0, 0.0), violet, ParticleTypes.REVERSE_PORTAL, 17.0, 11897599);
+         for (int beamTick = 0; beamTick < 10; beamTick++) {
+            int bt = beamTick;
+            Scheduler.later(bt * 2, () -> Fx.beamColumn(sw, ParticleTypes.END_ROD, gold, center.x, center.y, center.z, 45.0, 3.0 + bt * 0.6, (double)bt * 0.5));
+         }
          Fx.shatter(sw, ParticleTypes.END_ROD, violet, ParticleTypes.ELECTRIC_SPARK, gold, skyCenter.x, skyCenter.y, skyCenter.z, 6.0, 2.0);
          Fx.burst(sw, ParticleTypes.FIREWORK, skyCenter.x, skyCenter.y, skyCenter.z, 24, 6.0, 4.0, 6.0, 0.5);
          Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.LIGHTNING_BOLT_THUNDER, 4.0F, 0.5F);

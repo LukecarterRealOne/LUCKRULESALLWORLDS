@@ -245,6 +245,47 @@ public class Fx {
       }
    }
 
+
+   /* Orbital-strike style helpers. Original code; the look (laser marker, seven-star formation, descending beam column)
+      is inspired by "The Shooting Star (Demo)" by rimuru.dev (tiktok.com/@rimuru.dev) - thanks to them for the idea. */
+
+   /** Thin red/gold marker laser from the sky down onto a target plus a small locking ring. */
+   public static void laserMark(ServerLevel sw, ParticleOptions beam, ParticleOptions ringParticle, double x, double y, double z, double height, double phase) {
+      line(sw, beam, x, y + height, z, x, y + 0.1, z, 6);
+      ring(sw, ringParticle, x, y + 0.12, z, 2.2 + 0.4 * Math.sin(phase * 3.0), 18);
+      ring(sw, ringParticle, x, y + 0.12, z, 4.4, 18);
+   }
+
+   /** Seven stars on a circle, joined as a {7/2} heptagram; each star is a four-ray glint. */
+   public static void sevenStars(ServerLevel sw, ParticleOptions star, ParticleOptions link, double cx, double cy, double cz, double radius, double phase) {
+      double[][] p = new double[7][2];
+      for (int i = 0; i < 7; i++) {
+         double a = phase + i * Math.PI * 2.0 / 7.0;
+         p[i][0] = cx + Math.cos(a) * radius;
+         p[i][1] = cz + Math.sin(a) * radius;
+      }
+      for (int i = 0; i < 7; i++) {
+         int j = (i + 2) % 7;
+         line(sw, link, p[i][0], cy, p[i][1], p[j][0], cy, p[j][1], 3);
+         for (int r = 0; r < 4; r++) {
+            double ra = phase * 2.0 + r * Math.PI / 2.0;
+            line(sw, star, p[i][0], cy, p[i][1], p[i][0] + Math.cos(ra) * 1.6, cy + Math.sin(ra) * 1.6, p[i][1], 2);
+         }
+         burst(sw, star, p[i][0], cy, p[i][1], 1, 0.0, 0.0, 0.0, 0.0);
+      }
+   }
+
+   /** Vertical beam: bright core line with stacked spiralling rings. */
+   public static void beamColumn(ServerLevel sw, ParticleOptions core, ParticleOptions edge, double x, double y, double z, double height, double radius, double phase) {
+      line(sw, core, x, y, z, x, y + height, z, 8);
+      for (int i = 0; i < 6; i++) {
+         double t = (double)i / 5.0;
+         double a = phase + t * Math.PI * 3.0;
+         burst(sw, edge, x + Math.cos(a) * radius, y + t * height, z + Math.sin(a) * radius, 1, 0.0, 0.0, 0.0, 0.0);
+         burst(sw, edge, x + Math.cos(a + Math.PI) * radius, y + t * height, z + Math.sin(a + Math.PI) * radius, 1, 0.0, 0.0, 0.0, 0.0);
+      }
+   }
+
    public static void epicImpact(ServerLevel sw, Vec3 center, ParticleOptions energy, ParticleOptions sparks, double radius, int color) {
       double x = center.x;
       double y = center.y;
