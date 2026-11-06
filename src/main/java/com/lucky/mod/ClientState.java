@@ -53,7 +53,7 @@ public class ClientState {
             int dt = cutscene - LINE_TIMING[i][0];
             if (dt >= 0 && dt < LINES[i].length() / 2 + 1 && dt % 1 == 0) {
                net.minecraft.client.Minecraft.getInstance().getSoundManager().play(
-                  net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.7F + (dt % 3) * 0.1F, 0.25F));
+                  net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK.value(), 1.7F + (dt % 3) * 0.1F, 0.25F));
             }
          }
          if (cutscene > CUTSCENE_LEN) {
