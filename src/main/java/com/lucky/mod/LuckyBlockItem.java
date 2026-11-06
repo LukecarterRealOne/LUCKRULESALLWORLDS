@@ -875,26 +875,19 @@ public class LuckyBlockItem extends Item {
    }
 
    private void summonAllies(ServerLevel sw, Player user) {
-      List<EntityType<?>> modded = new ArrayList<>();
+      // Pool = EVERY summonable living mob type in the game, vanilla and modded. No favourites, no golem fallback.
+      List<EntityType<?>> pool = new ArrayList<>();
 
       for (ResourceLocation id : ForgeRegistries.ENTITY_TYPES.getKeys()) {
-         String ns = id.getNamespace();
-         if (!ns.equals("minecraft") && !ns.equals("luckyblockmod")) {
-            EntityType<?> type = (EntityType<?>)ForgeRegistries.ENTITY_TYPES.getValue(id);
-            if (type != null && type.getCategory() != MobCategory.MISC && type.canSummon()) {
-               modded.add(type);
-            }
+         EntityType<?> type = (EntityType<?>)ForgeRegistries.ENTITY_TYPES.getValue(id);
+         if (type != null && type.getCategory() != MobCategory.MISC && type.canSummon()
+            && type != EntityType.ENDER_DRAGON && type != EntityType.WITHER && type != EntityType.GIANT && type != EntityType.PLAYER
+            && !id.getNamespace().equals("luckyblockmod")) {
+            pool.add(type);
          }
       }
 
-      List<EntityType<?>> fallback = List.of(EntityType.IRON_GOLEM, EntityType.WOLF, EntityType.WOLF, EntityType.VINDICATOR, EntityType.IRON_GOLEM);
-      msg(
-         user,
-         modded.isEmpty()
-            ? "\u00a7b\u00a7lVANILLA FALLBACK ALLY SQUAD!"
-            : "\u00a7b\u00a7lMIXED MODDED + VANILLA ALLY SQUAD! (" + modded.size() + " mod mob types available)"
-      );
-      int total = 5;
+      msg(user, "\u00a7b\u00a7lCOMPLETELY RANDOM ALLY SQUAD! (" + pool.size() + " mob types in the pool)");
       List<Mob> allies = new ArrayList<>();
       Set<UUID> ids = new HashSet<>();
       StringBuilder names = new StringBuilder();
@@ -904,11 +897,8 @@ public class LuckyBlockItem extends Item {
          Vec3 pos = user.position().add(Math.cos(a) * 3.5, 0.0, Math.sin(a) * 3.5);
          Mob mob = null;
 
-         for (int attempt = 0; attempt < 6 && mob == null; attempt++) {
-            EntityType<?> type = !modded.isEmpty() && i < 4 && attempt < 5
-               ? modded.get(sw.random.nextInt(modded.size()))
-               : fallback.get(i % fallback.size());
-            mob = this.spawnAlly(sw, user, type, pos, false);
+         for (int attempt = 0; attempt < 25 && mob == null && !pool.isEmpty(); attempt++) {
+            mob = this.spawnAlly(sw, user, pool.get(sw.random.nextInt(pool.size())), pos, false);
          }
 
          if (mob != null) {
