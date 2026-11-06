@@ -21,9 +21,6 @@ public class ClientEvents {
    public static void onClientTick(ClientTickEvent event) {
       if (event.phase == Phase.END) {
          ClientState.tick();
-      if (ClientState.cutscene >= 0 && net.minecraft.client.Minecraft.getInstance().screen != null) {
-         net.minecraft.client.Minecraft.getInstance().setScreen(null); // no inventory / menus during the cutscene
-      }
          Minecraft mc = Minecraft.getInstance();
 
          while (ClientModEvents.OPEN_MENU.consumeClick()) {
@@ -80,7 +77,7 @@ public class ClientEvents {
 
    private static void renderCutscene(net.minecraft.client.gui.GuiGraphics g, int w, int h) {
       int t = ClientState.cutscene;
-      float a = t > 470 ? Math.max(0.0F, 1.0F - (t - 470) / 30.0F) : 1.0F;
+      float a = t < 20 ? t / 20.0F : (t > 470 ? Math.max(0.0F, 1.0F - (t - 470) / 30.0F) : 1.0F);
       g.fill(0, 0, w, h, ((int)(a * 255.0F) << 24));
       if (t >= 465 && t <= 480) {
          int fa = (int)(200.0F * (1.0F - Math.abs(t - 472) / 8.0F));
@@ -108,6 +105,23 @@ public class ClientEvents {
          g.pose().scale(sc, sc, 1.0F);
          g.drawString(font, s, -font.width(full) / 2, 0, (fade << 24) | tm[2], false);
          g.pose().popPose();
+      }
+   }
+
+   /** No inventory or other menus while the death cutscene plays (pause menu still works). */
+   @SubscribeEvent
+   public static void onScreenOpen(net.minecraftforge.client.event.ScreenEvent.Opening event) {
+      if (ClientState.cutscene >= 0 && event.getNewScreen() != null && !(event.getNewScreen() instanceof net.minecraft.client.gui.screens.PauseScreen)) {
+         event.setCanceled(true);
+      }
+   }
+
+   /** Hide the "Killed <name>" / death lines the game prints for the death the block just cancelled. */
+   @SubscribeEvent
+   public static void onChatLine(net.minecraftforge.client.event.ClientChatReceivedEvent event) {
+      if (ClientState.cutscene >= 0 && event.getMessage().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc
+         && (tc.getKey().startsWith("death.") || tc.getKey().startsWith("commands.kill"))) {
+         event.setCanceled(true);
       }
    }
 }
