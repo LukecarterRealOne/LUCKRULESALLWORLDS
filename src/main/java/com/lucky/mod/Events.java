@@ -177,4 +177,26 @@ public class Events {
          event.setCanceled(true);
       }
    }
+
+   /** A shattered block leaks gold light from its cracks while carried; sparks drift off the hand, shards fall. */
+   @SubscribeEvent
+   public static void onShardAura(net.minecraftforge.event.TickEvent.PlayerTickEvent event) {
+      if (event.phase != net.minecraftforge.event.TickEvent.Phase.END || event.player.level().isClientSide) return;
+      Player p = event.player;
+      if (p.tickCount % 4 != 0) return;
+      boolean held = (p.getMainHandItem().getItem() instanceof LuckyBlockItem && Shards.isShattered(p.getMainHandItem()))
+         || (p.getOffhandItem().getItem() instanceof LuckyBlockItem && Shards.isShattered(p.getOffhandItem()));
+      if (!held || !(p.level() instanceof ServerLevel sw)) return;
+      net.minecraft.world.phys.Vec3 look = p.getLookAngle();
+      double hx = p.getX() + look.x * 0.7 - look.z * 0.35;
+      double hy = p.getY() + 1.2;
+      double hz = p.getZ() + look.z * 0.7 + look.x * 0.35;
+      Fx.burst(sw, ParticleTypes.END_ROD, hx, hy, hz, 1, 0.12, 0.12, 0.12, 0.02);
+      Fx.burst(sw, ParticleTypes.ELECTRIC_SPARK, hx, hy, hz, 2, 0.2, 0.2, 0.2, 0.08);
+      net.minecraft.core.particles.BlockParticleOption crack = new net.minecraft.core.particles.BlockParticleOption(ParticleTypes.BLOCK, net.minecraft.world.level.block.Blocks.GOLD_BLOCK.defaultBlockState());
+      Fx.burst(sw, crack, hx, hy + 0.4, hz, 1, 0.15, 0.0, 0.15, 0.0);
+      if (p.tickCount % 20 == 0) {
+         Fx.burst(sw, ParticleTypes.FIREWORK, p.getX(), p.getY() + 1.0, p.getZ(), 4, 0.5, 0.6, 0.5, 0.03);
+      }
+   }
 }
