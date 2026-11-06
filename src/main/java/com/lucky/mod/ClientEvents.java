@@ -43,6 +43,10 @@ public class ClientEvents {
 
    @SubscribeEvent
    public static void onGui(Post event) {
+      if (ClientState.cutscene >= 0) {
+         renderCutscene(event.getGuiGraphics(), event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight());
+         return;
+      }
       net.minecraft.client.player.LocalPlayer lp = net.minecraft.client.Minecraft.getInstance().player;
       if (lp != null && net.minecraft.client.Minecraft.getInstance().screen == null
          && (lp.getMainHandItem().is((net.minecraft.world.item.Item)LuckyBlockMod.LUCKY_BLOCK.get())
@@ -62,6 +66,39 @@ public class ClientEvents {
          int a = (int)(Math.min(1.0F, ClientState.flash) * 200.0F);
          int argb = a << 24 | ClientState.flashColor & 16777215;
          event.getGuiGraphics().fill(0, 0, event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight(), argb);
+      }
+   }
+
+   private static void renderCutscene(net.minecraft.client.gui.GuiGraphics g, int w, int h) {
+      int t = ClientState.cutscene;
+      float a = t < 20 ? t / 20.0F : (t > 470 ? Math.max(0.0F, 1.0F - (t - 470) / 30.0F) : 1.0F);
+      g.fill(0, 0, w, h, ((int)(a * 255.0F) << 24));
+      if (t >= 465 && t <= 480) {
+         int fa = (int)(200.0F * (1.0F - Math.abs(t - 472) / 8.0F));
+         if (fa > 0) {
+            g.fill(0, 0, w, h, (fa << 24) | 0xFFE9A0);
+         }
+      }
+      net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft.getInstance().font;
+      for (int i = 0; i < ClientState.LINES.length; i++) {
+         int[] tm = ClientState.LINE_TIMING[i];
+         int dt = t - tm[0];
+         if (dt < 0 || dt > tm[1]) {
+            continue;
+         }
+         String full = ClientState.LINES[i];
+         int shown = Math.min(full.length(), (dt + 1) * 2);
+         int fade = Math.min(255, Math.max(8, (tm[1] - dt) * 32));
+         String s = full.substring(0, shown);
+         float sc = tm[3] / 10.0F;
+         while (font.width(full) * sc > w - 24 && sc > 1.0F) {
+            sc -= 0.25F;
+         }
+         g.pose().pushPose();
+         g.pose().translate(w / 2.0F, h / 2.0F - 8.0F * sc, 0.0F);
+         g.pose().scale(sc, sc, 1.0F);
+         g.drawString(font, s, -font.width(full) / 2, 0, (fade << 24) | tm[2], false);
+         g.pose().popPose();
       }
    }
 }

@@ -57,6 +57,7 @@ public class LuckyBlockMod {
          id++, OpenDimensionPickerPacket.class, OpenDimensionPickerPacket::encode, OpenDimensionPickerPacket::decode, OpenDimensionPickerPacket::handle
       );
       CHANNEL.registerMessage(id++, ChooseDimensionPacket.class, ChooseDimensionPacket::encode, ChooseDimensionPacket::decode, ChooseDimensionPacket::handle);
+      CHANNEL.registerMessage(id++, CutscenePacket.class, CutscenePacket::encode, CutscenePacket::decode, CutscenePacket::handle);
    }
 
    private void addToTabs(BuildCreativeModeTabContentsEvent event) {
