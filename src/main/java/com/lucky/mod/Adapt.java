@@ -168,4 +168,47 @@ public final class Adapt {
          sp.setHealth(sp.getMaxHealth());
       }
    }
+
+   /** /clear aimed at an adapted player (block in hand): refused with a taunt. */
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onCommand(net.minecraftforge.event.CommandEvent event) {
+      com.mojang.brigadier.context.CommandContextBuilder<net.minecraft.commands.CommandSourceStack> ctx = event.getParseResults().getContext();
+      if (ctx.getNodes().isEmpty() || !"clear".equals(ctx.getNodes().get(0).getNode().getName())) {
+         return;
+      }
+      net.minecraft.commands.CommandSourceStack src = ctx.getSource();
+      java.util.LinkedHashSet<ServerPlayer> targets = new java.util.LinkedHashSet<>();
+      boolean hasSelector = false;
+      com.mojang.brigadier.context.CommandContextBuilder<net.minecraft.commands.CommandSourceStack> b = ctx;
+      while (b != null) {
+         for (java.util.Map.Entry<String, com.mojang.brigadier.context.ParsedArgument<net.minecraft.commands.CommandSourceStack, ?>> en : b.getArguments().entrySet()) {
+            if (en.getValue().getResult() instanceof net.minecraft.commands.arguments.selector.EntitySelector es) {
+               hasSelector = true;
+               try {
+                  targets.addAll(es.findPlayers(src));
+               } catch (com.mojang.brigadier.exceptions.CommandSyntaxException ignored) {
+               }
+            }
+         }
+         b = b.getChild();
+      }
+      if (!hasSelector && src.getEntity() instanceof ServerPlayer self) {
+         targets.add(self);
+      }
+      boolean blocked = false;
+      for (ServerPlayer t : targets) {
+         if (active(t)) {
+            blocked = true;
+            t.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(4, 40, 10));
+            t.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(Component.literal("\u00a76\u00a7lNot bad, but try again.")));
+            if (!adapted(t, "cmd:clear")) {
+               learn(t, "cmd:clear", "/CLEAR");
+            }
+         }
+      }
+      if (blocked) {
+         event.setCanceled(true);
+         src.sendFailure(Component.literal("Not bad, but try again."));
+      }
+   }
 }
