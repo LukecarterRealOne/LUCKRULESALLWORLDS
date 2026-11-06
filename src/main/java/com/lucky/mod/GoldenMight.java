@@ -397,6 +397,7 @@ public final class GoldenMight {
 
       void orbPhase(int var1) {
          double var2 = this.orbRadius(var1);
+         this.fxOrb(var1, var2);
          if (var1 % 4 == 0) {
             this.updateOrb(var1, var2, 0.05);
          }
@@ -472,6 +473,7 @@ public final class GoldenMight {
          if (var1 < 245) {
             double var6 = (double)(var1 - 200) / 45.0;
             double var4 = 9.0 - 7.2 * var6 * var6;
+            this.fxCollapse(var1, var6);
             if (var1 == 200) {
                this.msg("\u00a76\u00a7lCOLLAPSE");
                this.snd("minecraft:block.beacon.deactivate", this.ox, this.oy, this.oz, 8.0F, 0.5F);
@@ -548,6 +550,7 @@ public final class GoldenMight {
                );
             }
 
+            this.fxQuasar(var1);
             this.updateQuasar(var1, 3.0, 1.6, 55.0, 1.0);
             this.quasarBeams(var1);
          }
@@ -605,6 +608,7 @@ public final class GoldenMight {
          double[] var3 = GoldenMight.alignY(var2[0], var2[1], var2[2]);
          if (var1 < 445) {
             double var17 = (double)(var1 - 395) / 50.0;
+            this.fxGrbCharge(var1, var17);
             if (var1 == 395) {
                this.msg("\u00a7f\u00a7lGAMMA RAY BURST \u2014 charging");
                this.snd("minecraft:entity.warden.sonic_charge", this.ox, this.oy, this.oz, 10.0F, 0.5F);
@@ -642,6 +646,7 @@ public final class GoldenMight {
             }
 
             int var4 = var1 - 445;
+            this.fxGrbFire(var4, var2);
             if (var4 >= 0 && var4 < 6) {
                for (int var5 = var4; var5 < this.grbTargets.size(); var5 += 6) {
                   LivingEntity var6 = this.grbTargets.get(var5);
@@ -707,6 +712,176 @@ public final class GoldenMight {
          this.merge(this.tag + "_jo", GoldenMight.xform(var1, 16.0, 240.0, 16.0, 0.5, 0.5, 0.5), 3);
          this.merge(this.tag + "_ji", GoldenMight.xform(var1, 7.0, 240.0, 7.0, 0.5, 0.5, 0.5), 3);
          this.grbTargets = this.pick(this.targets(), 48);
+      }
+
+      // ================= visual rework layers (particles only; the damage/logic above is untouched) =================
+      private double[][] basis(double[] a) {
+         double[] tmp = Math.abs(a[0]) < 0.9 ? new double[]{1.0, 0.0, 0.0} : new double[]{0.0, 1.0, 0.0};
+         double[] u = new double[]{a[1] * tmp[2] - a[2] * tmp[1], a[2] * tmp[0] - a[0] * tmp[2], a[0] * tmp[1] - a[1] * tmp[0]};
+         double ul = Math.sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
+         u[0] /= ul;
+         u[1] /= ul;
+         u[2] /= ul;
+         double[] w = new double[]{a[1] * u[2] - a[2] * u[1], a[2] * u[0] - a[0] * u[2], a[0] * u[1] - a[1] * u[0]};
+         return new double[][]{u, w};
+      }
+
+      private double[] randDir() {
+         double a = this.rnd.nextDouble() * Math.PI * 2.0;
+         double z = this.rnd.nextDouble() * 2.0 - 1.0;
+         double s = Math.sqrt(1.0 - z * z);
+         return new double[]{Math.cos(a) * s, z, Math.sin(a) * s};
+      }
+
+      /** Solar orb: curling prominences, spinning corona rings, god rays and a ground sun sigil. */
+      void fxOrb(int t, double r) {
+         if (t % 2 == 0) {
+            for (int i = 0; i < 3; i++) {
+               double[] d = this.randDir();
+               double[] tan = new double[]{-d[2], 0.0, d[0]};
+               double h = r * (0.35 + this.rnd.nextDouble() * 0.45);
+               for (int k = 0; k <= 6; k++) {
+                  double u = k / 6.0;
+                  double lift = Math.sin(u * Math.PI) * h;
+                  double side = u * h * 0.8;
+                  double rad = r * 0.9 + lift;
+                  Fx.burst(this.lv, k % 2 == 0 ? ParticleTypes.FLAME : ParticleTypes.END_ROD,
+                     this.ox + d[0] * rad + tan[0] * side, this.oy + d[1] * rad, this.oz + d[2] * rad + tan[2] * side, 1, 0.03, 0.03, 0.03, 0.0);
+               }
+            }
+         }
+         if (t % 4 == 0) {
+            Shapes.armillary(this.lv, this.gold, this.white, this.ox, this.oy, this.oz, r * 1.25, (double)t * 0.05);
+         }
+         if (t % 8 == 0) {
+            for (int i = 0; i < 8; i++) {
+               double a = i * Math.PI / 4.0 + t * 0.02;
+               Fx.line(this.lv, i % 2 == 0 ? this.white : this.gold, this.ox, this.oy - r * 0.6, this.oz,
+                  this.cx + Math.cos(a) * r * 2.3, this.cy + 0.2, this.cz + Math.sin(a) * r * 2.3, 8);
+            }
+         }
+         if (t % 6 == 0) {
+            Fx.rune(this.lv, this.gold, this.white, this.cx, this.cy + 0.2, this.cz, r * 1.8, (double)t * 0.04);
+         }
+      }
+
+      /** Collapse: light streams converge on the shrinking sun. */
+      void fxCollapse(int t, double prog) {
+         if (t % 3 == 0) {
+            double start = 14.0 * (1.0 - prog) + 3.0;
+            for (int i = 0; i < 9; i++) {
+               double[] d = this.randDir();
+               Fx.line(this.lv, i % 2 == 0 ? this.white : this.gold, this.ox + d[0] * start, this.oy + d[1] * start, this.oz + d[2] * start,
+                  this.ox + d[0] * 1.5, this.oy + d[1] * 1.5, this.oz + d[2] * 1.5, 5);
+            }
+            Shapes.armillary(this.lv, this.white, this.violet, this.ox, this.oy, this.oz, 2.0 + 6.0 * (1.0 - prog), (double)t * 0.2);
+         }
+      }
+
+      /** Quasar: spiral accretion arms, relativistic jets, an Einstein ring and infalling streams. */
+      void fxQuasar(int t) {
+         double[] a = this.axisAt(t);
+         double[][] b = this.basis(a);
+         double[] u = b[0];
+         double[] w = b[1];
+         if (t % 2 == 0) {
+            for (int arm = 0; arm < 3; arm++) {
+               for (int j = 0; j < 6; j++) {
+                  double rr = 3.5 + j * 3.2;
+                  double ang = t * 0.18 - j * 0.55 + arm * Math.PI * 2.0 / 3.0;
+                  double c = Math.cos(ang) * rr;
+                  double s = Math.sin(ang) * rr;
+                  net.minecraft.core.particles.ParticleOptions p = arm == 0 ? this.gold : (arm == 1 ? (net.minecraft.core.particles.ParticleOptions)ParticleTypes.FLAME : this.white);
+                  Fx.burst(this.lv, p, this.ox + u[0] * c + w[0] * s, this.oy + u[1] * c + w[1] * s, this.oz + u[2] * c + w[2] * s, 1, 0.05, 0.05, 0.05, 0.0);
+               }
+            }
+            for (int sgn = -1; sgn <= 1; sgn += 2) {
+               for (int k = 0; k < 8; k++) {
+                  double dist = (4.0 + k * 5.0) * sgn;
+                  Fx.burst(this.lv, ParticleTypes.END_ROD, this.ox + a[0] * dist, this.oy + a[1] * dist, this.oz + a[2] * dist, 1, 0.12, 0.12, 0.12, 0.01);
+               }
+            }
+         }
+         if (t % 4 == 0) {
+            double tc = Math.cos(1.05);
+            double ts = Math.sin(1.05);
+            for (int i = 0; i < 24; i++) {
+               double ang = i * Math.PI * 2.0 / 24.0 + t * 0.05;
+               double c = Math.cos(ang) * 5.5;
+               double s = Math.sin(ang) * 5.5;
+               double ux = u[0] * tc + a[0] * ts;
+               double uy = u[1] * tc + a[1] * ts;
+               double uz = u[2] * tc + a[2] * ts;
+               Fx.burst(this.lv, this.white, this.ox + ux * c + w[0] * s, this.oy + uy * c + w[1] * s, this.oz + uz * c + w[2] * s, 1, 0.0, 0.0, 0.0, 0.0);
+            }
+         }
+         if (t % 6 == 0) {
+            for (int sgn = -1; sgn <= 1; sgn += 2) {
+               Fx.line(this.lv, this.white, this.ox, this.oy, this.oz, this.ox + a[0] * 55.0 * sgn, this.oy + a[1] * 55.0 * sgn, this.oz + a[2] * 55.0 * sgn, 14);
+            }
+         }
+         if (t % 3 == 0) {
+            for (int s = 0; s < 5; s++) {
+               double ang0 = this.rnd.nextDouble() * Math.PI * 2.0;
+               for (int k = 0; k < 4; k++) {
+                  double rr = 30.0 - k * 6.5;
+                  double ang = ang0 + k * 0.7;
+                  double c = Math.cos(ang) * rr;
+                  double sn = Math.sin(ang) * rr;
+                  Fx.burst(this.lv, ParticleTypes.REVERSE_PORTAL, this.ox + u[0] * c + w[0] * sn, this.oy + u[1] * c + w[1] * sn, this.oz + u[2] * c + w[2] * sn, 1, 0.0, 0.0, 0.0, 0.0);
+               }
+            }
+         }
+      }
+
+      /** Gamma ray charge: converging beams, tightening armillary, a rising helix. */
+      void fxGrbCharge(int t, double prog) {
+         if (t % 2 == 0) {
+            double start = 18.0 * (1.0 - prog) + 4.0;
+            for (int i = 0; i < 10; i++) {
+               double[] d = this.randDir();
+               Fx.line(this.lv, ParticleTypes.ELECTRIC_SPARK, this.ox + d[0] * start, this.oy + d[1] * start, this.oz + d[2] * start,
+                  this.ox + d[0] * 2.5, this.oy + d[1] * 2.5, this.oz + d[2] * 2.5, 4);
+            }
+         }
+         if (t % 6 == 0) {
+            Shapes.armillary(this.lv, this.white, this.gold, this.ox, this.oy, this.oz, 3.0 + 7.0 * (1.0 - prog), (double)t * 0.3);
+         }
+         if (t % 4 == 0) {
+            Fx.helix(this.lv, this.white, ParticleTypes.END_ROD, this.ox, this.cy, this.oz, 2.5, Math.max(6.0, this.oy - this.cy), (double)t * 0.6);
+         }
+      }
+
+      /** Gamma ray burst: tilted expanding shock shells, ground cracks, hypercube shatter, light pillars. */
+      void fxGrbFire(int n, double[] axis) {
+         if (n >= 0 && n < 40 && n % 2 == 0) {
+            double rad = 3.0 + n * 1.4;
+            for (int tilt = 0; tilt < 3; tilt++) {
+               double tr = tilt * Math.PI / 3.0;
+               for (int i = 0; i < 16; i++) {
+                  double ang = i * Math.PI * 2.0 / 16.0;
+                  double x = Math.cos(ang) * rad;
+                  double z = Math.sin(ang) * rad;
+                  Fx.burst(this.lv, tilt == 1 ? this.gold : this.white, this.ox + x, this.oy + z * Math.sin(tr), this.oz + z * Math.cos(tr), 1, 0.0, 0.0, 0.0, 0.0);
+               }
+            }
+         }
+         if (n == 2) {
+            for (int i = 0; i < 8; i++) {
+               double ang = i * Math.PI / 4.0 + 0.2;
+               Fx.line(this.lv, i % 2 == 0 ? this.white : this.gold, this.cx, this.cy + 0.2, this.cz, this.cx + Math.cos(ang) * 40.0, this.cy + 0.2, this.cz + Math.sin(ang) * 40.0, 8);
+            }
+         }
+         if (n == 4) {
+            Fx.shatter(this.lv, this.white, this.gold, ParticleTypes.ELECTRIC_SPARK, ParticleTypes.END_ROD, this.ox, this.oy, this.oz, 6.0, 2.0);
+         }
+         if (n > 0 && n % 4 == 0 && n < 60) {
+            for (int i = 0; i < 3; i++) {
+               double ang = this.rnd.nextDouble() * Math.PI * 2.0;
+               double rr = 8.0 + this.rnd.nextDouble() * 22.0;
+               Fx.pillar(this.lv, this.white, this.cx + Math.cos(ang) * rr, this.cy, this.cy + 30.0, this.cz + Math.sin(ang) * rr);
+            }
+         }
       }
 
       HyperFx hyper;

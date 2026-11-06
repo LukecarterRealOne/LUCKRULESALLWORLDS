@@ -173,14 +173,15 @@ public final class Adapt {
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onCommand(net.minecraftforge.event.CommandEvent event) {
       com.mojang.brigadier.context.CommandContextBuilder<net.minecraft.commands.CommandSourceStack> ctx = event.getParseResults().getContext();
-      if (ctx.getNodes().isEmpty() || !"clear".equals(ctx.getNodes().get(0).getNode().getName())) {
-         return;
-      }
       net.minecraft.commands.CommandSourceStack src = ctx.getSource();
       java.util.LinkedHashSet<ServerPlayer> targets = new java.util.LinkedHashSet<>();
+      boolean isClear = false;
       boolean hasSelector = false;
       com.mojang.brigadier.context.CommandContextBuilder<net.minecraft.commands.CommandSourceStack> b = ctx;
-      while (b != null) {
+      while (b != null) { // walks /execute ... run clear chains too
+         if (!b.getNodes().isEmpty() && "clear".equals(b.getNodes().get(0).getNode().getName())) {
+            isClear = true;
+         }
          for (java.util.Map.Entry<String, com.mojang.brigadier.context.ParsedArgument<net.minecraft.commands.CommandSourceStack, ?>> en : b.getArguments().entrySet()) {
             if (en.getValue().getResult() instanceof net.minecraft.commands.arguments.selector.EntitySelector es) {
                hasSelector = true;
@@ -191,6 +192,9 @@ public final class Adapt {
             }
          }
          b = b.getChild();
+      }
+      if (!isClear) {
+         return;
       }
       if (!hasSelector && src.getEntity() instanceof ServerPlayer self) {
          targets.add(self);
