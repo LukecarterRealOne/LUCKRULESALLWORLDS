@@ -22,6 +22,12 @@ public class ClientState {
       "Well, anyway... since you're here.", "I'll give you a new power.", "Now use the block properly this time."
    };
 
+   public static int alert = -1;
+
+   public static void startAlert() {
+      alert = 0;
+   }
+
    public static void startCutscene() {
       cutscene = 0;
    }
@@ -47,6 +53,12 @@ public class ClientState {
    }
 
    public static void tick() {
+      if (alert >= 0) {
+         alert++;
+         if (alert > 44) {
+            alert = -1;
+         }
+      }
       if (cutscene >= 0) {
          cutscene++;
          for (int i = 0; i < LINES.length; i++) {

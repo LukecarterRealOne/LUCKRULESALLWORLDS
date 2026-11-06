@@ -43,6 +43,12 @@ public class ClientEvents {
 
    @SubscribeEvent
    public static void onGui(Post event) {
+      if (ClientState.alert >= 0) {
+         int ph = ClientState.alert;
+         int col = (ph / 3) % 2 == 0 ? 0xFF1A1A : 0xFFD21A;
+         int al = (int)(150.0F * (1.0F - ph / 45.0F)) + 40;
+         event.getGuiGraphics().fill(0, 0, event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight(), (Math.min(255, al) << 24) | col);
+      }
       if (ClientState.cutscene >= 0) {
          renderCutscene(event.getGuiGraphics(), event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight());
          return;

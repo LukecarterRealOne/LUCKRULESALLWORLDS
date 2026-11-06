@@ -25,6 +25,7 @@ import org.joml.Vector3f;
 @EventBusSubscriber(modid = "luckyblockmod")
 public final class Adapt {
    private static final String ROOT = "lbm_adapt";
+   private static final java.util.Set<java.util.UUID> PENDING = new java.util.HashSet<>();
 
    private Adapt() {
    }
@@ -86,6 +87,26 @@ public final class Adapt {
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onAttack(LivingAttackEvent event) {
+      if (event.getEntity() instanceof ServerPlayer sp && has(sp) && "genericKill".equals(event.getSource().getMsgId())) {
+         // /kill: refuse it, make a scene, and adapt to it for good.
+         event.setCanceled(true);
+         if (!adapted(sp, "dmg:genericKill") && PENDING.add(sp.getUUID())) {
+            sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(4, 50, 12));
+            sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(Component.literal("\u00a7c\u00a7lNot on my watch.")));
+            LuckyBlockMod.CHANNEL.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> sp), new CutscenePacket(1));
+            if (sp.level() instanceof ServerLevel sw) {
+               Fx.sound(sw, sp.blockPosition(), SoundEvents.WARDEN_SONIC_BOOM, 2.0F, 1.4F);
+               Fx.sound(sw, sp.blockPosition(), SoundEvents.ANVIL_LAND, 1.5F, 0.6F);
+            }
+            Scheduler.later(45, () -> {
+               PENDING.remove(sp.getUUID());
+               if (!sp.isRemoved() && !adapted(sp, "dmg:genericKill")) {
+                  learn(sp, "dmg:genericKill", "/KILL");
+               }
+            });
+         }
+         return;
+      }
       if (event.getEntity() instanceof Player p && !p.level().isClientSide && has(p)) {
          if (!event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY) && adapted(p, "dmg:" + event.getSource().getMsgId())) {
             event.setCanceled(true);
