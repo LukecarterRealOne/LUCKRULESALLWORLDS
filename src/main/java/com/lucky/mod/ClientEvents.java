@@ -21,6 +21,9 @@ public class ClientEvents {
    public static void onClientTick(ClientTickEvent event) {
       if (event.phase == Phase.END) {
          ClientState.tick();
+      if (ClientState.cutscene >= 0 && net.minecraft.client.Minecraft.getInstance().screen != null) {
+         net.minecraft.client.Minecraft.getInstance().setScreen(null); // no inventory / menus during the cutscene
+      }
          Minecraft mc = Minecraft.getInstance();
 
          while (ClientModEvents.OPEN_MENU.consumeClick()) {
@@ -77,7 +80,7 @@ public class ClientEvents {
 
    private static void renderCutscene(net.minecraft.client.gui.GuiGraphics g, int w, int h) {
       int t = ClientState.cutscene;
-      float a = t < 20 ? t / 20.0F : (t > 470 ? Math.max(0.0F, 1.0F - (t - 470) / 30.0F) : 1.0F);
+      float a = t > 470 ? Math.max(0.0F, 1.0F - (t - 470) / 30.0F) : 1.0F;
       g.fill(0, 0, w, h, ((int)(a * 255.0F) << 24));
       if (t >= 465 && t <= 480) {
          int fa = (int)(200.0F * (1.0F - Math.abs(t - 472) / 8.0F));
