@@ -46,7 +46,8 @@ public class AbilityScreen extends Screen {
 
          int x = this.startX + slot % 2 * (this.buttonWidth + gapX);
          int y = this.startY + slot / 2 * this.rowStep;
-         String label = String.format("%02d  %s", ability + 1, Abilities.NAMES[ability]);
+         boolean locked = ability >= Abilities.BASE && !this.unlocked();
+         String label = (locked ? "\u00a78\u00a7o" : "") + String.format("%02d  %s", ability + 1, locked ? "??? (shattered)" : Abilities.NAMES[ability]);
          this.addRenderableWidget(
             Button.builder(Component.literal(label), b -> this.choose(ability)).bounds(x, y, this.buttonWidth, this.buttonHeight).build()
          );
@@ -105,6 +106,11 @@ public class AbilityScreen extends Screen {
       }
 
       return -1;
+   }
+
+   private boolean unlocked() {
+      net.minecraft.client.player.LocalPlayer p = net.minecraft.client.Minecraft.getInstance().player;
+      return p != null && (Shards.isShattered(p.getMainHandItem()) || Shards.isShattered(p.getOffhandItem()));
    }
 
    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {

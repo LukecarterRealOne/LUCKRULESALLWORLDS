@@ -109,33 +109,36 @@ public class Events {
 
    @SubscribeEvent
    public static void onLuckyDeath(LivingDeathEvent event) {
-      if (event.getEntity() instanceof Player player && !player.level().isClientSide) {
-         ItemStack main = player.getMainHandItem();
-         ItemStack off = player.getOffhandItem();
-         if (!(main.getItem() instanceof LuckyBlockItem) && !(off.getItem() instanceof LuckyBlockItem)) {
-            return;
-         }
-
-         event.setCanceled(true);
-         player.setHealth(Math.max(1.0F, player.getMaxHealth()));
-         player.clearFire();
-         player.removeAllEffects();
-         player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 2400, 4));
-         player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 2400, 4));
-         player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 2400, 8));
-         player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 2400, 5));
-         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 2400, 3));
-         player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 2400, 0));
-         player.displayClientMessage(Component.literal("\u00a7e\u00a7lYou Died??"), false);
-         player.displayClientMessage(Component.literal("\u00a7fWith that much power with you?"), false);
-         player.displayClientMessage(Component.literal("\u00a7fwow your a noob"), false);
-         player.displayClientMessage(Component.literal("\u00a76But aside from that, I won't allow you to die that easily."), false);
-         if (player.level() instanceof ServerLevel level) {
-            Fx.screen(level, player.position(), 100.0, 1.0F, 4.0F, 30, 16776960);
-            Fx.burst(level, ParticleTypes.TOTEM_OF_UNDYING, player.getX(), player.getY() + 1.0, player.getZ(), 160, 2.0, 2.0, 2.0, 0.25);
-         }
-
+      if (!(event.getEntity() instanceof Player player) || player.level().isClientSide) {
          return;
+      }
+      ItemStack held = player.getMainHandItem().getItem() instanceof LuckyBlockItem ? player.getMainHandItem()
+         : (player.getOffhandItem().getItem() instanceof LuckyBlockItem ? player.getOffhandItem() : ItemStack.EMPTY);
+      if (held.isEmpty() || Shards.isShattered(held)) {
+         return; // no block, or it is already broken: death is real
+      }
+      // The block takes the killing blow for you: it SHATTERS (once) and the shard abilities unlock.
+      event.setCanceled(true);
+      Shards.shatter(held);
+      player.setHealth(player.getMaxHealth());
+      player.clearFire();
+      player.removeAllEffects();
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 600, 4));
+      player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 600, 3));
+      player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 600, 6));
+      player.addEffect(new MobEffectInstance(MobEffects.GLOWING, 100, 0));
+      player.displayClientMessage(Component.literal("\u00a7e\u00a7lTHE LUCKY BLOCK SHATTERS"), false);
+      player.displayClientMessage(Component.literal("\u00a7fIt took the killing blow for you. It will not do that again."), false);
+      player.displayClientMessage(Component.literal("\u00a76From the cracks: 12 new Shard abilities (open the menu, pages 4-5)."), false);
+      if (player.level() instanceof ServerLevel level) {
+         Fx.screen(level, player.position(), 100.0, 1.0F, 5.0F, 40, 16776960);
+         net.minecraft.core.particles.BlockParticleOption crack = new net.minecraft.core.particles.BlockParticleOption(ParticleTypes.BLOCK, net.minecraft.world.level.block.Blocks.GOLD_BLOCK.defaultBlockState());
+         Fx.burst(level, crack, player.getX(), player.getY() + 1.2, player.getZ(), 150, 1.2, 1.2, 1.2, 0.35);
+         Fx.burst(level, ParticleTypes.END_ROD, player.getX(), player.getY() + 1.2, player.getZ(), 60, 1.6, 1.6, 1.6, 0.5);
+         Fx.shatter(level, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, ParticleTypes.FIREWORK, ParticleTypes.CRIT, player.getX(), player.getY() + 1.2, player.getZ(), 1.5, 0.5);
+         Fx.sound(level, player.blockPosition(), net.minecraft.sounds.SoundEvents.GLASS_BREAK, 4.0F, 0.5F);
+         Fx.sound(level, player.blockPosition(), net.minecraft.sounds.SoundEvents.AMETHYST_CLUSTER_BREAK, 4.0F, 0.6F);
+         Fx.sound(level, player.blockPosition(), net.minecraft.sounds.SoundEvents.TOTEM_USE, 2.0F, 0.6F);
       }
    }
 

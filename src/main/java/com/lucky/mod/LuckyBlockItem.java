@@ -95,14 +95,24 @@ public class LuckyBlockItem extends Item {
       tooltip.add(Component.literal("\u00a7ePassive: \u00a7fDouble-speed flight while carried"));
       tooltip.add(Component.literal("\u00a77Flight speed: 2\u00d7 vanilla creative speed"));
       tooltip.add(Component.literal("\u00a78Double-tap jump to take off"));
+      if (Shards.isShattered(stack)) {
+         tooltip.add(Component.literal("\u00a7c\u00a7lSHATTERED \u00a77- 12 shard abilities unlocked"));
+      } else {
+         tooltip.add(Component.literal("\u00a78If it takes a killing blow, it shatters..."));
+      }
    }
 
    public InteractionResultHolder<ItemStack> use(Level level, Player user, InteractionHand hand) {
       ItemStack stack = user.getItemInHand(hand);
       if (level instanceof ServerLevel sw) {
          int a = user.isShiftKeyDown() ? 0 : SELECTED.getOrDefault(user.getUUID(), -1);
+         int pool = Shards.isShattered(stack) ? Abilities.COUNT : Abilities.BASE;
+         if (a >= pool) {
+            msg(user, "\u00a7cThat ability needs a shattered Lucky Block");
+            return InteractionResultHolder.fail(stack);
+         }
          if (a < 0 || a >= Abilities.COUNT) {
-            a = level.random.nextInt(Abilities.COUNT);
+            a = level.random.nextInt(pool);
          }
 
          this.castAbility(sw, user, a);
@@ -119,6 +129,10 @@ public class LuckyBlockItem extends Item {
    }
 
    private void castCore(ServerLevel sw, Player user, int a) {
+      if (a >= Abilities.BASE) {
+         Shards.cast(sw, user, a);
+         return;
+      }
       switch (a) {
          case 0:
             this.omegaBeam(sw, user);
@@ -249,6 +263,11 @@ public class LuckyBlockItem extends Item {
 
             if (player.getCooldowns().isOnCooldown(item)) {
                msg(player, "\u00a7cLucky Block is recharging!");
+               return;
+            }
+
+            if (ability >= Abilities.BASE && !Shards.isShattered(held)) {
+               msg(player, "\u00a7cThat ability needs a shattered Lucky Block");
                return;
             }
 

@@ -37,7 +37,19 @@ public final class Abilities {
       "60s Damage Shield",
       "Chain Lightning (7)",
       "Choose Dimension",
-      "Banish Area to Dimension"
+      "Banish Area to Dimension",
+      "Shard Barrage",
+      "Fracture Field",
+      "Prism Beam",
+      "Shard Orbit",
+      "Mirror Step",
+      "Gravity Shatter",
+      "Time Crack",
+      "Shard Rain",
+      "Void Rift",
+      "Crystal Armor",
+      "Shard Storm",
+      "Reassemble"
    };
    public static final String[] DESCRIPTIONS = new String[]{
       "Charges a gold/yellow energy beam, then fires a sustained long-range laser. Damages entities in its path.",
@@ -75,9 +87,22 @@ public final class Abilities {
       "For 60 seconds, blocks damage that does not bypass invulnerability and grants strong resistance, regeneration, absorption, and fire resistance. Damage specifically marked to bypass invulnerability can still get through.",
       "Strikes a target, then chains lightning to nearby living targets, up to seven total.",
       "Opens a paginated picker of active vanilla and modded server dimensions. Choose the destination used by travel and banishment.",
-      "Transfers movable entities in a 10-block area around your aimed point to the chosen dimension. Includes mobs, dropped items, projectiles, and players; excludes you and your summoned allies."
+      "Transfers movable entities in a 10-block area around your aimed point to the chosen dimension. Includes mobs, dropped items, projectiles, and players; excludes you and your summoned allies.",
+      "(Shattered) Fires 48 golden shards from your eyes in a spread, each dealing 30 magic damage along its path.",
+      "(Shattered) Cracks spread outward from you in five rings, damaging and launching everything they cross.",
+      "(Shattered) Splits light into seven coloured beams in a fan, each dealing 45 damage along a long line.",
+      "(Shattered) Eight shards orbit you for 20 seconds and shred any enemy they touch.",
+      "(Shattered) Blink forward up to 18 blocks leaving afterimages that damage enemies along the path.",
+      "(Shattered) A glowing 4D simplex pulls everything in, then collapses and detonates for 80 damage and a big launch.",
+      "(Shattered) Cracks time: enemies within 20 blocks are nearly frozen and weakened for 8 seconds while you speed up.",
+      "(Shattered) 80 shards fall over your aimed area, each hitting for 35 damage.",
+      "(Shattered) Tears open a void rift that drags enemies in, hurts and blinds them, then implodes for 100 damage.",
+      "(Shattered) 40 seconds of crystal armor: heavy resistance, absorption, regeneration and speed.",
+      "(Shattered) For ten seconds shards rain down around you in a wide circle, 25 damage each.",
+      "(Shattered) The block pulls itself together: full heal, cleanse, resistance and a 60-damage shockwave."
    };
    public static final int COUNT = NAMES.length;
+   public static final int BASE = 36;
    public static final int PER_PAGE = 10;
 
    private Abilities() {

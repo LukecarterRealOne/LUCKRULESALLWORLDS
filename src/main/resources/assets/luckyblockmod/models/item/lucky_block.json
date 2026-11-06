@@ -1,1 +1,5 @@
-{ "parent": "minecraft:item/generated", "textures": { "layer0": "luckyblockmod:item/lucky_block" } }
+{
+  "parent": "minecraft:item/generated",
+  "textures": { "layer0": "luckyblockmod:item/lucky_block" },
+  "overrides": [ { "predicate": { "luckyblockmod:shattered": 1 }, "model": "luckyblockmod:item/lucky_block_shattered" } ]
+}

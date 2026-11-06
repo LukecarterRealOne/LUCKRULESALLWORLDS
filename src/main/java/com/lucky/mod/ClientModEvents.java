@@ -20,6 +20,14 @@ public class ClientModEvents {
    }
 
    @SubscribeEvent
+   public static void onClientSetup(net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) {
+      event.enqueueWork(() -> net.minecraft.client.renderer.item.ItemProperties.register(
+         LuckyBlockMod.LUCKY_BLOCK.get(),
+         new net.minecraft.resources.ResourceLocation("luckyblockmod", "shattered"),
+         (stack, level, entity, seed) -> Shards.isShattered(stack) ? 1.0F : 0.0F));
+   }
+
+   @SubscribeEvent
    public static void onRegisterKeys(RegisterKeyMappingsEvent event) {
       event.register(OPEN_MENU);
    }
