@@ -46,6 +46,11 @@ public final class Adapt {
       return data(p).getBoolean("on");
    }
 
+   /** Adaptation only works while the Lucky Block is in a hand. */
+   public static boolean active(Player p) {
+      return has(p) && (p.getMainHandItem().getItem() instanceof LuckyBlockItem || p.getOffhandItem().getItem() instanceof LuckyBlockItem);
+   }
+
    private static boolean adapted(Player p, String key) {
       ListTag l = data(p).getList("keys", 8);
       for (int i = 0; i < l.size(); i++) {
@@ -87,7 +92,7 @@ public final class Adapt {
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onAttack(LivingAttackEvent event) {
-      if (event.getEntity() instanceof ServerPlayer sp && has(sp) && "genericKill".equals(event.getSource().getMsgId())) {
+      if (event.getEntity() instanceof ServerPlayer sp && active(sp) && "genericKill".equals(event.getSource().getMsgId())) {
          // /kill: refuse it, make a scene, and adapt to it for good.
          event.setCanceled(true);
          if (!adapted(sp, "dmg:genericKill") && PENDING.add(sp.getUUID())) {
@@ -107,16 +112,28 @@ public final class Adapt {
          }
          return;
       }
-      if (event.getEntity() instanceof Player p && !p.level().isClientSide && has(p)) {
-         if (!event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY) && adapted(p, "dmg:" + event.getSource().getMsgId())) {
+      if (event.getEntity() instanceof Player p && !p.level().isClientSide && active(p)) {
+         String key = "dmg:" + event.getSource().getMsgId();
+         boolean bypass = event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY);
+         if (bypass && !adapted(p, key)) {
+            // void, /damage with bypass, etc: adapt instantly (the first hit is already refused)
+            learn(p, key, event.getSource().getMsgId().replace('_', ' ').toUpperCase());
+         }
+         if (adapted(p, key)) {
             event.setCanceled(true);
+            if (event.getSource().is(net.minecraft.world.damagesource.DamageTypes.FELL_OUT_OF_WORLD) && p instanceof ServerPlayer sp && sp.level() instanceof ServerLevel sw) {
+               int y = sw.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, sp.getBlockX(), sp.getBlockZ());
+               sp.teleportTo(sw, sp.getX(), y + 1.0, sp.getZ(), sp.getYRot(), sp.getXRot());
+               sp.fallDistance = 0.0F;
+               sp.setDeltaMovement(0.0, 0.0, 0.0);
+            }
          }
       }
    }
 
    @SubscribeEvent
    public static void onDamaged(LivingDamageEvent event) {
-      if (event.getEntity() instanceof Player p && !p.level().isClientSide && has(p) && event.getAmount() > 0.0F) {
+      if (event.getEntity() instanceof Player p && !p.level().isClientSide && active(p) && event.getAmount() > 0.0F) {
          String id = event.getSource().getMsgId();
          if (!event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY) && !adapted(p, "dmg:" + id)) {
             learn(p, "dmg:" + id, id.replace('_', ' ').toUpperCase());
@@ -126,8 +143,8 @@ public final class Adapt {
 
    @SubscribeEvent
    public static void onEffectApplicable(MobEffectEvent.Applicable event) {
-      if (event.getEntity() instanceof Player p && !p.level().isClientSide && has(p)
-         && event.getEffectInstance().getEffect().getCategory() == MobEffectCategory.HARMFUL
+      if (event.getEntity() instanceof Player p && !p.level().isClientSide && active(p)
+         && event.getEffectInstance().getEffect().getCategory() != MobEffectCategory.BENEFICIAL
          && adapted(p, "fx:" + event.getEffectInstance().getEffect().getDescriptionId())) {
          event.setResult(Event.Result.DENY);
       }
@@ -135,8 +152,8 @@ public final class Adapt {
 
    @SubscribeEvent
    public static void onEffectAdded(MobEffectEvent.Added event) {
-      if (event.getEntity() instanceof Player p && !p.level().isClientSide && has(p)
-         && event.getEffectInstance().getEffect().getCategory() == MobEffectCategory.HARMFUL) {
+      if (event.getEntity() instanceof Player p && !p.level().isClientSide && active(p)
+         && event.getEffectInstance().getEffect().getCategory() != MobEffectCategory.BENEFICIAL) {
          String key = "fx:" + event.getEffectInstance().getEffect().getDescriptionId();
          if (!adapted(p, key)) {
             learn(p, key, event.getEffectInstance().getEffect().getDisplayName().getString().toUpperCase());

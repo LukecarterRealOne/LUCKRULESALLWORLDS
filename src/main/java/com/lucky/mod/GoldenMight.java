@@ -205,6 +205,10 @@ public final class GoldenMight {
 
       void finish(boolean var1) {
          this.finished = true;
+         if (this.hyper != null) {
+            this.hyper.remove();
+            this.hyper = null;
+         }
          this.cmd("kill @e[tag=" + this.tag + "]");
 
          for (UUID var3 : this.aiFrozen) {
@@ -705,6 +709,8 @@ public final class GoldenMight {
          this.grbTargets = this.pick(this.targets(), 48);
       }
 
+      HyperFx hyper;
+
       void tesseractPhase(int var1) {
          if (var1 == 520) {
             this.startTesseract();
@@ -713,19 +719,9 @@ public final class GoldenMight {
          int var2 = var1 - 520;
          if (var1 % 2 == 0 && var1 < 640) {
             double var3 = var1 < 590 ? 15.0 : 15.0 - 9.0 * ((double)(var1 - 590) / 50.0);
-            Fx.tesseract(
-               this.lv,
-               this.white,
-               ParticleTypes.REVERSE_PORTAL,
-               ParticleTypes.ELECTRIC_SPARK,
-               ParticleTypes.END_ROD,
-               this.ox,
-               this.oy,
-               this.oz,
-               var3,
-               (double)var1 * 0.05,
-               3
-            );
+            if (this.hyper != null) {
+               this.hyper.update(var3, (double)var1 * 0.05, 3);
+            }
          }
 
          if (var1 % 4 == 0 && var1 >= 520 && var1 < 640) {
@@ -739,11 +735,13 @@ public final class GoldenMight {
          }
 
          if (var1 == 640) {
+            if (this.hyper != null) {
+               this.hyper.update(34.0, 3.0, 4);
+               HyperFx hf = this.hyper;
+               this.hyper = null;
+               Scheduler.later(5, hf::remove);
+            }
             Fx.shatter(this.lv, this.white, ParticleTypes.REVERSE_PORTAL, ParticleTypes.ELECTRIC_SPARK, ParticleTypes.END_ROD, this.ox, this.oy, this.oz, 8.0, 4.0);
-         }
-
-         if (var1 % 3 == 0 && var1 < 640) {
-            this.updateCubes(var1);
          }
 
          if (var1 >= 520 && var1 < 640) {
@@ -754,8 +752,6 @@ public final class GoldenMight {
             this.msg("\u00a75\u00a7lThe hypercube closes...");
             this.snd("minecraft:block.beacon.deactivate", this.ox, this.oy, this.oz, 10.0F, 0.4F);
             this.snd("minecraft:entity.warden.sonic_charge", this.ox, this.oy, this.oz, 10.0F, 0.5F);
-            double[] var5 = GoldenMight.qSpin(1.0, 1.0, 0.0, (double)var1 * 0.03);
-            this.merge(this.tag + "_tO", GoldenMight.xform(var5, 8.0, 8.0, 8.0, 0.5, 0.5, 0.5), 50);
          }
 
          if (var1 > 590 && var1 < 640) {
@@ -782,10 +778,7 @@ public final class GoldenMight {
          this.part("minecraft:flash", this.ox, this.oy, this.oz, 0.0, 0.0, 0.0, 0.0, 1);
          Fx.screen(this.lv, new Vec3(this.cx, this.cy, this.cz), 140.0, 0.8F, 1.2F, 20, 13607167);
          this.cmd("kill @e[tag=" + this.tag + "_oK]");
-         String var1 = GoldenMight.xform(GoldenMight.Q_ID, 0.3, 0.3, 0.3, 0.5, 0.5, 0.5);
-         this.spawn("minecraft:light_blue_stained_glass", this.ox, this.oy, this.oz, this.tag + "_tO", null, var1, 16);
-         this.spawn("minecraft:purple_stained_glass", this.ox, this.oy, this.oz, this.tag + "_tM", null, var1, 16);
-         this.spawn("minecraft:white_stained_glass", this.ox, this.oy, this.oz, this.tag + "_tI", null, var1, 16);
+         this.hyper = HyperFx.spawn(this.lv, this.ox, this.oy, this.oz, "minecraft:gold_block", "minecraft:white_concrete", "minecraft:amethyst_block", "minecraft:glowstone");
          List<LivingEntity> var2 = this.pick(this.targets(), 40);
 
          for (int var3 = 0; var3 < var2.size(); var3++) {

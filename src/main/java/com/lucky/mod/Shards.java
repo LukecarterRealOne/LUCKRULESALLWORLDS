@@ -57,7 +57,7 @@ public final class Shards {
       if (e instanceof Player p && p.isSpectator()) {
          return;
       }
-      e.hurt(sw.damageSources().indirectMagic(u, u), dmg);
+      e.hurt(sw.damageSources().indirectMagic(u, u), dmg * 10.0F); // shard abilities hit MASSIVELY hard
    }
 
    private static List<LivingEntity> near(ServerLevel sw, Player u, Vec3 c, double r) {
