@@ -46,6 +46,7 @@ public class LuckyBlockMod {
       r.playToServer(WishItemPacket.TYPE, WishItemPacket.CODEC, WishItemPacket::handle);
       r.playToClient(OpenDimensionPickerPacket.TYPE, OpenDimensionPickerPacket.CODEC, OpenDimensionPickerPacket::handle);
       r.playToServer(ChooseDimensionPacket.TYPE, ChooseDimensionPacket.CODEC, ChooseDimensionPacket::handle);
+      r.playToClient(MeterPacket.TYPE, MeterPacket.CODEC, MeterPacket::handle);
       r.playToClient(CutscenePacket.TYPE, CutscenePacket.CODEC, CutscenePacket::handle);
    }
 

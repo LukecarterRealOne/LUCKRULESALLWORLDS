@@ -71,7 +71,7 @@ public class LuckyBlockItem extends Item {
    private static final Map<UUID, Integer> SHIELD_TOKENS = new HashMap<>();
    private static final Set<Integer> ENDED = new HashSet<>();
    private static final int[] COOLDOWNS = new int[]{
-      100, 24, 28, 20, 24, 20, 40, 45, 70, 200, 180, 55, 25, 35, 30, 25, 20, 120, 800, 80, 30, 45, 90, 25, 120, 60, 25, 45, 55, 15, 60, 45, 180, 35, 10, 240, 100
+      100, 24, 28, 20, 24, 20, 40, 45, 70, 200, 180, 55, 25, 35, 30, 25, 20, 120, 800, 80, 30, 45, 90, 25, 120, 60, 25, 45, 55, 15, 60, 45, 180, 35, 10, 240, 100, 300
    };
    private static final Map<UUID, Deque<LuckyBlockItem.PlayerSnapshot>> PLAYER_HISTORY = new HashMap<>();
    private static final int SNAPSHOT_CAPACITY = 100;
@@ -85,8 +85,8 @@ public class LuckyBlockItem extends Item {
    private static final String[] ORB_BLOCKS = new String[]{"minecraft:cyan_stained_glass", "minecraft:light_blue_stained_glass", "minecraft:white_concrete"};
    private static final double[] ORB_WIDTHS = new double[]{18.0, 11.0, 5.5};
 
-   private static int cooldownOf(int a) {
-      return a >= 0 && a < COOLDOWNS.length ? COOLDOWNS[a] : 40;
+   private static int cooldownOf(int a, Player p) {
+      return LuckMeter.cooldown(p, a >= 0 && a < COOLDOWNS.length ? COOLDOWNS[a] : 40);
    }
 
    public LuckyBlockItem(Properties properties) {
@@ -118,7 +118,7 @@ public class LuckyBlockItem extends Item {
          }
 
          this.castAbility(sw, user, a);
-         user.getCooldowns().addCooldown(this, cooldownOf(a));
+         user.getCooldowns().addCooldown(this, cooldownOf(a, user));
          return InteractionResultHolder.success(stack);
       } else {
          return InteractionResultHolder.success(stack);
@@ -126,6 +126,7 @@ public class LuckyBlockItem extends Item {
    }
 
    public void castAbility(ServerLevel sw, Player user, int a) {
+      LuckMeter.onCast(user);
       Shapes.signature(sw, user, a);
       this.castCore(sw, user, a);
       if (a < Abilities.BASE) {
@@ -249,6 +250,9 @@ public class LuckyBlockItem extends Item {
             break;
          case 36:
             this.mindControl(sw, user);
+            break;
+         case 37:
+            this.riftGate(sw, user);
       }
    }
 
@@ -280,7 +284,7 @@ public class LuckyBlockItem extends Item {
             }
 
             item.castAbility(sw, player, ability);
-            player.getCooldowns().addCooldown(item, cooldownOf(ability));
+            player.getCooldowns().addCooldown(item, cooldownOf(ability, player));
          }
       }
    }
@@ -1980,6 +1984,79 @@ public class LuckyBlockItem extends Item {
       Fx.rune(sw, violet, ParticleTypes.WITCH, c.x, c.y + 0.2, c.z, 7.0, 0.0);
       msg(user, "\u00a75" + chosen.size() + " mind(s) now serve you.");
       this.allyTick(sw, user, chosen, ids, 6000, 36.0, false);
+   }
+
+   private static final Map<UUID, Long> RIFT_CD = new HashMap<>();
+
+   /** Opens a rift ahead of the player that sends anything entering it far away / to the chosen dimension, plus a twin that leads back. */
+   private void riftGate(ServerLevel sw, Player user) {
+      msg(user, "\u00a7d\u00a7lRIFT GATE!");
+      ServerLevel dest = sw;
+      Vec3 arrival;
+      if (user instanceof ServerPlayer sp && selectedDestination(sp) != null && selectedDestination(sp) != sw) {
+         dest = selectedDestination(sp);
+         BlockPos b = findArrival(dest, 0);
+         arrival = new Vec3(b.getX() + 0.5, b.getY(), b.getZ() + 0.5);
+      } else if (sw.dimensionType().hasCeiling()) {
+         BlockPos b = findArrival(sw, 3);
+         arrival = new Vec3(b.getX() + 0.5, b.getY(), b.getZ() + 0.5);
+      } else {
+         double ang = sw.random.nextDouble() * Math.PI * 2.0;
+         double dist = 3000.0 + sw.random.nextDouble() * 9000.0;
+         int x = (int)(user.getX() + Math.cos(ang) * dist);
+         int z = (int)(user.getZ() + Math.sin(ang) * dist);
+         sw.getChunk(x >> 4, z >> 4);
+         int y = sw.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z);
+         arrival = new Vec3(x + 0.5, y + 1.0, z + 0.5);
+      }
+      Vec3 look = user.getLookAngle();
+      Vec3 here = user.position().add(look.x * 4.0, 0.0, look.z * 4.0);
+      float yaw = user.getYRot();
+      this.openRift(sw, here, yaw, dest, arrival, 600);
+      this.openRift(dest, arrival.add(3.0, 0.0, 0.0), yaw, sw, user.position(), 600);
+      Fx.sound(sw, user.blockPosition(), SoundEvents.END_PORTAL_SPAWN, 3.0F, 1.4F);
+      Fx.screen(sw, user.position(), 48.0, 0.3F, 0.6F, 12, 0xAA44FF);
+   }
+
+   private void openRift(ServerLevel lvl, Vec3 c, float yawDeg, ServerLevel destLvl, Vec3 exit, int remaining) {
+      if (remaining <= 0) {
+         Fx.burst(lvl, ParticleTypes.POOF, c.x, c.y + 1.2, c.z, 30, 0.8, 1.2, 0.8, 0.05);
+         return;
+      }
+      double yr = Math.toRadians(yawDeg);
+      double rx = -Math.cos(yr);
+      double rz = -Math.sin(yr);
+      if (remaining % 2 == 0) {
+         DustParticleOptions edge = new DustParticleOptions(new Vector3f(0.65F, 0.25F, 1.0F), 1.3F);
+         double spin = (600 - remaining) * 0.12;
+         for (int i = 0; i < 20; i++) {
+            double a = i * Math.PI * 2.0 / 20.0 + spin * 0.2;
+            double px = Math.cos(a) * 1.5;
+            double py = Math.sin(a) * 2.1;
+            Fx.burst(lvl, edge, c.x + rx * px, c.y + 1.3 + py, c.z + rz * px, 1, 0.0, 0.0, 0.0, 0.0);
+         }
+         Fx.burst(lvl, ParticleTypes.REVERSE_PORTAL, c.x, c.y + 1.3, c.z, 10, 0.7, 1.2, 0.7, 0.05);
+         Fx.burst(lvl, ParticleTypes.PORTAL, c.x, c.y + 1.3, c.z, 6, 0.6, 1.1, 0.6, 0.3);
+      }
+      long now = lvl.getGameTime();
+      for (Entity e : lvl.getEntitiesOfClass(Entity.class, new AABB(c.x - 1.6, c.y - 0.2, c.z - 1.6, c.x + 1.6, c.y + 3.0, c.z + 1.6), x -> x.isAlive() && !x.getTags().contains("lbm_fx"))) {
+         if (RIFT_CD.getOrDefault(e.getUUID(), -1000L) + 100L > now) {
+            continue;
+         }
+         RIFT_CD.put(e.getUUID(), now);
+         Fx.burst(lvl, ParticleTypes.REVERSE_PORTAL, e.getX(), e.getY() + 1.0, e.getZ(), 24, 0.4, 0.8, 0.4, 0.2);
+         Fx.sound(lvl, e.blockPosition(), SoundEvents.ENDERMAN_TELEPORT, 1.5F, 0.7F);
+         if (destLvl == lvl) {
+            if (e instanceof ServerPlayer sp2) {
+               sp2.teleportTo(destLvl, exit.x, exit.y, exit.z, sp2.getYRot(), sp2.getXRot());
+            } else {
+               e.moveTo(exit.x, exit.y, exit.z);
+            }
+         } else if (e.canChangeDimensions(lvl, destLvl)) {
+            e.changeDimension(directTransition(e, destLvl, BlockPos.containing(exit.x, exit.y, exit.z)));
+         }
+      }
+      Scheduler.later(1, () -> this.openRift(lvl, c, yawDeg, destLvl, exit, remaining - 1));
    }
 
    private void allyCommand(ServerLevel sw, Player user) {

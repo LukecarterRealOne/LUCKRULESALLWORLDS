@@ -1,0 +1,7 @@
+{
+  "required": false,
+  "package": "com.lucky.mod.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["KickMixin"],
+  "injectors": { "defaultRequire": 0 }
+}

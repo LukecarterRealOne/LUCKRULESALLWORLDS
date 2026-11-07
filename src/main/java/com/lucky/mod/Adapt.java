@@ -32,7 +32,7 @@ public final class Adapt {
    private Adapt() {
    }
 
-   private static CompoundTag data(Player p) {
+   public static CompoundTag data(Player p) {
       CompoundTag persisted = p.getPersistentData().getCompound("lbm_persist");
       CompoundTag d = persisted.getCompound(ROOT);
       persisted.put(ROOT, d);
@@ -42,6 +42,15 @@ public final class Adapt {
 
    public static void grant(Player p) {
       data(p).putBoolean("on", true);
+   }
+
+   public static java.util.List<String> names(Player p) {
+      ListTag l = data(p).getList("names", 8);
+      java.util.List<String> out = new java.util.ArrayList<>();
+      for (int i = 0; i < l.size(); i++) {
+         out.add(l.getString(i));
+      }
+      return out;
    }
 
    public static boolean has(Player p) {
@@ -68,6 +77,13 @@ public final class Adapt {
       ListTag l = d.getList("keys", 8);
       l.add(StringTag.valueOf(key));
       d.put("keys", l);
+      ListTag nl = d.getList("names", 8);
+      nl.add(StringTag.valueOf(pretty.length() > 60 ? pretty.substring(0, 60) : pretty));
+      d.put("names", nl);
+      LuckMeter.add(p, 250);
+      if (p instanceof net.minecraft.server.level.ServerPlayer sp0) {
+         LuckMeter.sync(sp0);
+      }
       p.displayClientMessage(Component.literal("§e§lADAPTED §r§6to " + pretty), true);
       if (p.level() instanceof ServerLevel sw) {
          chime(sw, p);

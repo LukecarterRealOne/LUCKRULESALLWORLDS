@@ -39,6 +39,7 @@ public final class Abilities {
       "Choose Dimension",
       "Banish Area to Dimension",
       "Mind Control: Come",
+      "Rift Gate",
       "Shard Barrage",
       "Fracture Field",
       "Prism Beam",
@@ -90,6 +91,7 @@ public final class Abilities {
       "Opens a paginated picker of active vanilla and modded server dimensions. Choose the destination used by travel and banishment.",
       "Transfers movable entities in a 10-block area around your aimed point to the chosen dimension. Includes mobs, dropped items, projectiles, and players; excludes you and your summoned allies.",
       "Say \"come\": the mob you aim at (and any mobs around it) are completely mind controlled. Any mob in the game, bosses included. They drop every grudge, serve and protect only you under the hardcoded ally law, fight for you and follow you for five minutes.",
+      "Opens a shimmering rift in front of you for 30 seconds. Step in to travel thousands of blocks away (or to the dimension chosen with Choose Dimension). A twin rift opens at the far end to bring you back. Anything can enter it: other players, mobs, items.",
       "(Shattered) Fires 48 golden shards from your eyes in a spread, each dealing 300 magic damage along its path.",
       "(Shattered) Cracks spread outward from you in five rings, dealing 250 damage and launching everything they cross.",
       "(Shattered) Splits light into seven coloured beams in a fan, each dealing 450 damage along a long line.",
@@ -104,7 +106,7 @@ public final class Abilities {
       "(Shattered) The block pulls itself together: full heal, cleanse, resistance and a 600-damage shockwave."
    };
    public static final int COUNT = NAMES.length;
-   public static final int BASE = 37;
+   public static final int BASE = 38;
    public static final int PER_PAGE = 10;
 
    private Abilities() {
