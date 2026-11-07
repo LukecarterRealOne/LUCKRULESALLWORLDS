@@ -3,6 +3,8 @@ package com.lucky.mod;
 import java.util.Random;
 
 public class ClientState {
+   public static int luck = 0;
+   public static java.util.List<String> adapted = java.util.List.of();
    public static float flash = 0.0F;
    public static int flashColor = 16773242;
    public static float shakeAmp = 0.0F;

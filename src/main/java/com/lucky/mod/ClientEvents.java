@@ -53,6 +53,7 @@ public class ClientEvents {
          renderCutscene(event.getGuiGraphics(), event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight());
          return;
       }
+      renderMeter(event.getGuiGraphics());
       net.minecraft.client.player.LocalPlayer lp = net.minecraft.client.Minecraft.getInstance().player;
       if (lp != null && net.minecraft.client.Minecraft.getInstance().screen == null
          && (lp.getMainHandItem().is((net.minecraft.world.item.Item)LuckyBlockMod.LUCKY_BLOCK.get())
@@ -72,6 +73,44 @@ public class ClientEvents {
          int a = (int)(Math.min(1.0F, ClientState.flash) * 200.0F);
          int argb = a << 24 | ClientState.flashColor & 16777215;
          event.getGuiGraphics().fill(0, 0, event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight(), argb);
+      }
+   }
+
+   /** Bottom-right: the luck meter bar and the list of everything you have adapted to. */
+   private static void renderMeter(net.minecraft.client.gui.GuiGraphics g) {
+      net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+      net.minecraft.client.player.LocalPlayer lp = mc.player;
+      if (lp == null || mc.screen != null || mc.options.hideGui
+         || !(lp.getMainHandItem().getItem() instanceof LuckyBlockItem || lp.getOffhandItem().getItem() instanceof LuckyBlockItem)) {
+         return;
+      }
+      if (ClientState.luck <= 0 && ClientState.adapted.isEmpty()) {
+         return;
+      }
+      int w = mc.getWindow().getGuiScaledWidth();
+      int h = mc.getWindow().getGuiScaledHeight();
+      net.minecraft.client.gui.Font font = mc.font;
+      int bw = 120;
+      int x = w - bw - 8;
+      int y = h - 14;
+      float f = Math.min(1.0F, ClientState.luck / 50000.0F);
+      g.fill(x - 1, y - 1, x + bw + 1, y + 7, 0xAA000000);
+      g.fill(x, y, x + bw, y + 6, 0xFF2A2200);
+      int fillW = (int)(bw * f);
+      g.fill(x, y, x + fillW, y + 6, 0xFFFFC820);
+      g.fill(x, y, x + fillW, y + 2, 0xFFFFF3A0);
+      String lt = "\u00a76LUCK \u00a7e" + String.format("%,d", ClientState.luck) + " \u00a78/ 50,000";
+      g.drawString(font, lt, w - 8 - font.width(lt), y - 10, 0xFFFFFF, true);
+      java.util.List<String> a = ClientState.adapted;
+      if (!a.isEmpty()) {
+         int shown = Math.min(8, a.size());
+         int ly = y - 12 - shown * 10;
+         String head = "\u00a7e\u00a7lADAPTED \u00a7r\u00a78(" + a.size() + ")";
+         g.drawString(font, head, w - 8 - font.width(head), ly - 11, 0xFFFFFF, true);
+         for (int i = 0; i < shown; i++) {
+            String line = "\u00a76" + a.get(a.size() - shown + i);
+            g.drawString(font, line, w - 8 - font.width(line), ly + i * 10, 0xFFFFFF, true);
+         }
       }
    }
 
