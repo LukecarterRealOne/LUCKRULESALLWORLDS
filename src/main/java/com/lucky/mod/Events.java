@@ -104,6 +104,13 @@ public class Events {
                event.setCanceled(true);
             }
          }
+      } else if (event.getEntity().getTags().contains("lbm_ally")) {
+         // allies never hurt each other, and their owner never hurts them
+         Entity att = event.getSource().getEntity();
+         Entity dir = event.getSource().getDirectEntity();
+         if (att instanceof Player || att != null && att.getTags().contains("lbm_ally") || dir != null && dir.getTags().contains("lbm_ally")) {
+            event.setCanceled(true);
+         }
       }
    }
 
@@ -122,6 +129,19 @@ public class Events {
       Shards.shatter(held);
       if (player instanceof ServerPlayer sp) {
          Cutscene.start(sp);
+      }
+   }
+
+   /** Any non-Warden ally (brain or goal driven): never keeps the owner / a player / another ally as a target. */
+   @SubscribeEvent
+   public static void onAllyBrainTick(LivingEvent.LivingTickEvent event) {
+      if (!(event.getEntity() instanceof net.minecraft.world.entity.Mob mob) || mob.level().isClientSide || mob instanceof Warden) return;
+      if (!mob.getTags().contains("lbm_ally") || mob.tickCount % 2 != 0) return;
+      LivingEntity t = mob.getTarget();
+      if (t != null && protectedFromGuard(t)) {
+         mob.setTarget(null);
+         mob.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
+         mob.getBrain().eraseMemory(MemoryModuleType.ANGRY_AT);
       }
    }
 

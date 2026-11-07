@@ -839,9 +839,7 @@ public class LuckyBlockItem extends Item {
             golem.setPlayerCreated(true);
          }
 
-         mob.setPersistenceRequired();
-         mob.addTag("lbm_ally");
-         mob.addTag("lbm_owner_" + user.getUUID());
+         AllyCode.bind(mob, user);
          int dur = guardian ? 2500 : 1300;
          int amp = guardian ? 2 : 1;
          mob.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, dur, amp));
@@ -857,7 +855,9 @@ public class LuckyBlockItem extends Item {
          }
 
          mob.setTarget(null);
-         sw.addFreshEntity(mob);
+         if (!sw.addFreshEntity(mob)) {
+            return null;
+         }
          LightningBolt bolt = (LightningBolt)EntityType.LIGHTNING_BOLT.create(sw);
          if (bolt != null) {
             bolt.moveTo(pos.x, pos.y, pos.z);
@@ -874,18 +874,37 @@ public class LuckyBlockItem extends Item {
       }
    }
 
-   private void summonAllies(ServerLevel sw, Player user) {
-      // Pool = EVERY summonable living mob type in the game, vanilla and modded. No favourites, no golem fallback.
-      List<EntityType<?>> pool = new ArrayList<>();
+   private static List<EntityType<?>> ALLY_POOL;
 
-      for (ResourceLocation id : ForgeRegistries.ENTITY_TYPES.getKeys()) {
-         EntityType<?> type = (EntityType<?>)ForgeRegistries.ENTITY_TYPES.getValue(id);
-         if (type != null && type.getCategory() != MobCategory.MISC && type.canSummon()
-            && type != EntityType.ENDER_DRAGON && type != EntityType.WITHER && type != EntityType.GIANT && type != EntityType.PLAYER
-            && !id.getNamespace().equals("luckyblockmod")) {
-            pool.add(type);
+   /** Every entity type in the game (vanilla + modded) that actually produces a Mob/NPC: golems, villagers, animals, monsters... */
+   private static List<EntityType<?>> allyPool(ServerLevel sw) {
+      if (ALLY_POOL == null) {
+         List<EntityType<?>> out = new ArrayList<>();
+         for (ResourceLocation id : ForgeRegistries.ENTITY_TYPES.getKeys()) {
+            EntityType<?> type = (EntityType<?>)ForgeRegistries.ENTITY_TYPES.getValue(id);
+            if (type == null || !type.canSummon() || type == EntityType.ENDER_DRAGON || type == EntityType.WITHER
+               || type == EntityType.GIANT || type == EntityType.PLAYER || id.getNamespace().equals("luckyblockmod")) {
+               continue;
+            }
+            try {
+               Entity probe = type.create(sw);
+               if (probe instanceof Mob) {
+                  out.add(type);
+               }
+               if (probe != null) {
+                  probe.discard();
+               }
+            } catch (Throwable ignored) {
+            }
          }
+         ALLY_POOL = out;
       }
+      return new ArrayList<>(ALLY_POOL);
+   }
+
+   private void summonAllies(ServerLevel sw, Player user) {
+      List<EntityType<?>> pool = allyPool(sw);
+      java.util.Collections.shuffle(pool, new java.util.Random(sw.random.nextLong())); // 5 DIFFERENT types, no repeats
 
       msg(user, "\u00a7b\u00a7lCOMPLETELY RANDOM ALLY SQUAD! (" + pool.size() + " mob types in the pool)");
       List<Mob> allies = new ArrayList<>();
@@ -897,8 +916,8 @@ public class LuckyBlockItem extends Item {
          Vec3 pos = user.position().add(Math.cos(a) * 3.5, 0.0, Math.sin(a) * 3.5);
          Mob mob = null;
 
-         for (int attempt = 0; attempt < 25 && mob == null && !pool.isEmpty(); attempt++) {
-            mob = this.spawnAlly(sw, user, pool.get(sw.random.nextInt(pool.size())), pos, false);
+         for (int attempt = 0; attempt < 40 && mob == null && !pool.isEmpty(); attempt++) {
+            mob = this.spawnAlly(sw, user, pool.remove(pool.size() - 1), pos, false);
          }
 
          if (mob != null) {
@@ -956,21 +975,14 @@ public class LuckyBlockItem extends Item {
                Fx.burst(sw, ParticleTypes.POOF, a.getX(), a.getY() + 1.0, a.getZ(), 30, 0.5, 0.8, 0.5, 0.05);
                a.discard();
             } else {
-               LivingEntity tgt = a.getTarget();
-               if (tgt instanceof Player || tgt != null && ids.contains(tgt.getUUID())) {
-                  a.setTarget(null);
-               }
-
-               if (attacker != null && attacker.isAlive() && !(attacker instanceof Player) && !ids.contains(attacker.getUUID())) {
-                  a.setTarget(attacker);
-               }
+               AllyCode.tick(sw, user, a, ids, remaining, followSq);
 
                LivingEntity cur = a.getTarget();
                if ((cur == null || !cur.isAlive()) && remaining % 5 == 0) {
                   Mob best = null;
                   double bd = Double.MAX_VALUE;
 
-                  for (Mob f : sw.getEntitiesOfClass(Mob.class, a.getBoundingBox().inflate(20.0), m -> m instanceof Enemy && m.isAlive() && !ids.contains(m.getUUID()))) {
+                  for (Mob f : sw.getEntitiesOfClass(Mob.class, a.getBoundingBox().inflate(20.0), m -> AllyCode.isFoe(m, ids))) {
                      double d = a.distanceToSqr(f);
                      if (d < bd) {
                         bd = d;

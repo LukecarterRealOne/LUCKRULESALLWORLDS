@@ -59,7 +59,7 @@ public final class Abilities {
       "Launches you upward and grants slow falling; it does not grant sustained flight.",
       "Drops 30 random items selected from the installed vanilla and modded item registry.",
       "Lifts enemies in an aimed area, pulls them inward, then slams them down.",
-      "Summons five allies, each picked completely at random from every summonable mob in the game, vanilla and modded. No fixed picks and no iron golem fallback. The Wither and Ender Dragon are excluded.",
+      "Summons five DIFFERENT allies, each picked completely at random from every NPC and mob in the game, vanilla and modded (villagers, golems, animals, monsters...). The Wither and Ender Dragon are excluded. Hardcoded ally law: they only protect and serve you, never target you, and even peaceful mobs fight for you.",
       "Charges a tall beam at your aimed location, then detonates in a large impact.",
       "Creates a temporary blue field that deflects nearby projectiles and pushes hostile mobs away.",
       "Summons up to six Wardens that follow and defend you for two minutes; blocked spawn locations can reduce the count. The Wardens team up with you so they never target you, they are angered at nearby hostile mobs, and their Darkness pulse is cleared from you.",
