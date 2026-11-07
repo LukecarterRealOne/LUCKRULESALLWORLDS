@@ -46,19 +46,19 @@ public class ClientEvents {
          int ph = ClientState.alert;
          int col = (ph / 3) % 2 == 0 ? 0xFF1A1A : 0xFFD21A;
          int al = (int)(150.0F * (1.0F - ph / 45.0F)) + 40;
-         event.getGuiGraphics().fill(0, 0, event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight(), (Math.min(255, al) << 24) | col);
+         event.getGuiGraphics().fill(0, 0, net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledWidth(), net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledHeight(), (Math.min(255, al) << 24) | col);
       }
       if (ClientState.cutscene >= 0) {
-         renderCutscene(event.getGuiGraphics(), event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight());
+         renderCutscene(event.getGuiGraphics(), net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledWidth(), net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledHeight());
          return;
       }
       net.minecraft.client.player.LocalPlayer lp = net.minecraft.client.Minecraft.getInstance().player;
       if (lp != null && net.minecraft.client.Minecraft.getInstance().screen == null
          && (lp.getMainHandItem().is((net.minecraft.world.item.Item)LuckyBlockMod.LUCKY_BLOCK.get())
             || lp.getOffhandItem().is((net.minecraft.world.item.Item)LuckyBlockMod.LUCKY_BLOCK.get()))) {
-         int w = event.getWindow().getGuiScaledWidth();
-         int h = event.getWindow().getGuiScaledHeight();
-         float pulse = 0.5F + 0.5F * (float)Math.sin((lp.tickCount + event.getPartialTick()) * 0.08F);
+         int w = net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledWidth();
+         int h = net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledHeight();
+         float pulse = 0.5F + 0.5F * (float)Math.sin((lp.tickCount + event.getPartialTick().getGameTimeDeltaPartialTick(false)) * 0.08F);
          int a = (int)(18.0F + 22.0F * pulse);
          for (int i = 0; i < 10; i++) {
             int al = a * (10 - i) / 10;
@@ -70,7 +70,7 @@ public class ClientEvents {
       if (!(ClientState.flash <= 0.01F)) {
          int a = (int)(Math.min(1.0F, ClientState.flash) * 200.0F);
          int argb = a << 24 | ClientState.flashColor & 16777215;
-         event.getGuiGraphics().fill(0, 0, event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight(), argb);
+         event.getGuiGraphics().fill(0, 0, net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledWidth(), net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledHeight(), argb);
       }
    }
 

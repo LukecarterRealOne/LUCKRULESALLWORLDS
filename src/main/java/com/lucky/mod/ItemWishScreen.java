@@ -162,7 +162,7 @@ public class ItemWishScreen extends Screen {
    }
 
    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-      this.renderBackground(graphics);
+      this.renderBackground(graphics, mouseX, mouseY, partialTick);
       super.render(graphics, mouseX, mouseY, partialTick);
       graphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 16777215);
       graphics.drawCenteredString(

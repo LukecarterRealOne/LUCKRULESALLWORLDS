@@ -746,7 +746,7 @@ public class LuckyBlockItem extends Item {
 
       for (int i = 0; i < 30; i++) {
          Item itemx = all.get(sw.random.nextInt(all.size()));
-         int count = 1 + sw.random.nextInt(Math.max(1, Math.min(itemx.getMaxStackSize(), 16)));
+         int count = 1 + sw.random.nextInt(Math.max(1, Math.min(itemx.getDefaultMaxStackSize(), 16)));
          ItemStack loot = new ItemStack(itemx, count);
          double x = base.x + (sw.random.nextDouble() - 0.5) * 6.0;
          double z = base.z + (sw.random.nextDouble() - 0.5) * 6.0;
@@ -1539,11 +1539,9 @@ public class LuckyBlockItem extends Item {
                continue;
             }
             l.add(w -> {
-               net.minecraft.world.entity.projectile.Arrow a = EntityType.ARROW.create(w);
-               if (a != null) {
-                  a.setEffectsFromItem(net.minecraft.world.item.alchemy.PotionContents.createItemStack(net.minecraft.world.item.Items.TIPPED_ARROW, potion));
-                  a.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.DISALLOWED;
-               }
+               net.minecraft.world.entity.projectile.Arrow a = new net.minecraft.world.entity.projectile.Arrow(w, 0.0, 0.0, 0.0,
+                  net.minecraft.world.item.alchemy.PotionContents.createItemStack(net.minecraft.world.item.Items.TIPPED_ARROW, potion), null);
+               a.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.DISALLOWED;
                return a;
             });
          }
@@ -2213,7 +2211,7 @@ public class LuckyBlockItem extends Item {
             AABB zone = new AABB(center, center).inflate(10.0);
             List<Entity> targets = new ArrayList<>(
                sw.getEntities(
-                  (Entity)null, zone, entityx -> entityx != user && !friend(entityx, user) && entityx.canChangeDimensions() && entityx.position().distanceToSqr(center) <= 100.0
+                  (Entity)null, zone, entityx -> entityx != user && !friend(entityx, user) && entityx.canChangeDimensions(sw, destination) && entityx.position().distanceToSqr(center) <= 100.0
                )
             );
             if (targets.isEmpty()) {
@@ -2228,7 +2226,7 @@ public class LuckyBlockItem extends Item {
 
                for (int index = 0; index < targets.size(); index++) {
                   Entity entity = targets.get(index);
-                  if (!entity.isRemoved() && entity.canChangeDimensions()) {
+                  if (!entity.isRemoved() && entity.canChangeDimensions(sw, destination)) {
                      BlockPos arrival = findArrival(destination, index);
                      Entity moved = entity.changeDimension(directTransition(entity, destination, arrival));
                      if (moved != null) {

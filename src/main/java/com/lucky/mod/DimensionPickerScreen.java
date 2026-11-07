@@ -97,7 +97,7 @@ public final class DimensionPickerScreen extends Screen {
    }
 
    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-      this.renderBackground(g);
+      this.renderBackground(g, mouseX, mouseY, partialTick);
       super.render(g, mouseX, mouseY, partialTick);
       g.drawCenteredString(this.font, this.title, this.width / 2, 10, 16777215);
       g.drawCenteredString(this.font, Component.literal("Available active dimensions \u2022 vanilla + modded"), this.width / 2, 27, 12578815);

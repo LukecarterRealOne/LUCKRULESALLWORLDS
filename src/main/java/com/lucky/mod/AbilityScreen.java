@@ -114,7 +114,7 @@ public class AbilityScreen extends Screen {
    }
 
    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-      this.renderBackground(g);
+      this.renderBackground(g, mouseX, mouseY, partialTick);
       g.fillGradient(0, 0, this.width, this.height, 0x66301E00, 0xAA050300);
       g.fill(this.width / 2 - 90, 48, this.width / 2 + 90, 49, 0xCCFFC83A);
       super.render(g, mouseX, mouseY, partialTick);
