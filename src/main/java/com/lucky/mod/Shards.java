@@ -24,9 +24,9 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
-/** The shattered-block state and the 12 abilities it unlocks (ids 36..47). */
+/** The shattered-block state and the 12 abilities it unlocks (ids 37..48). */
 public final class Shards {
-   public static final int FIRST = 36;
+   public static final int FIRST = 37;
    private static final DustParticleOptions GOLD = new DustParticleOptions(new Vector3f(1.0F, 0.82F, 0.15F), 1.2F);
    private static final DustParticleOptions WHITE = new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 1.0F);
    private static final DustParticleOptions VIOLET = new DustParticleOptions(new Vector3f(0.6F, 0.2F, 1.0F), 1.3F);

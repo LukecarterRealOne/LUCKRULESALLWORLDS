@@ -71,7 +71,7 @@ public class LuckyBlockItem extends Item {
    private static final Map<UUID, Integer> SHIELD_TOKENS = new HashMap<>();
    private static final Set<Integer> ENDED = new HashSet<>();
    private static final int[] COOLDOWNS = new int[]{
-      100, 24, 28, 20, 24, 20, 40, 45, 70, 200, 180, 55, 25, 35, 30, 25, 20, 120, 800, 80, 30, 45, 90, 25, 120, 60, 25, 45, 55, 15, 60, 45, 180, 35, 10, 240
+      100, 24, 28, 20, 24, 20, 40, 45, 70, 200, 180, 55, 25, 35, 30, 25, 20, 120, 800, 80, 30, 45, 90, 25, 120, 60, 25, 45, 55, 15, 60, 45, 180, 35, 10, 240, 100
    };
    private static final Map<UUID, Deque<LuckyBlockItem.PlayerSnapshot>> PLAYER_HISTORY = new HashMap<>();
    private static final int SNAPSHOT_CAPACITY = 100;
@@ -84,6 +84,10 @@ public class LuckyBlockItem extends Item {
    private static final double[] BEAM_WIDTHS = new double[]{6.0, 3.4, 1.7, 0.8};
    private static final String[] ORB_BLOCKS = new String[]{"minecraft:cyan_stained_glass", "minecraft:light_blue_stained_glass", "minecraft:white_concrete"};
    private static final double[] ORB_WIDTHS = new double[]{18.0, 11.0, 5.5};
+
+   private static int cooldownOf(int a) {
+      return a >= 0 && a < COOLDOWNS.length ? COOLDOWNS[a] : 40;
+   }
 
    public LuckyBlockItem(Properties properties) {
       super(properties);
@@ -114,7 +118,7 @@ public class LuckyBlockItem extends Item {
          }
 
          this.castAbility(sw, user, a);
-         user.getCooldowns().addCooldown(this, COOLDOWNS[a]);
+         user.getCooldowns().addCooldown(this, cooldownOf(a));
          return InteractionResultHolder.success(stack);
       } else {
          return InteractionResultHolder.success(stack);
@@ -242,6 +246,9 @@ public class LuckyBlockItem extends Item {
             break;
          case 35:
             this.banishAreaToSelectedDimension(sw, user);
+            break;
+         case 36:
+            this.mindControl(sw, user);
       }
    }
 
@@ -273,7 +280,7 @@ public class LuckyBlockItem extends Item {
             }
 
             item.castAbility(sw, player, ability);
-            player.getCooldowns().addCooldown(item, COOLDOWNS[ability]);
+            player.getCooldowns().addCooldown(item, cooldownOf(ability));
          }
       }
    }
@@ -966,6 +973,10 @@ public class LuckyBlockItem extends Item {
    }
 
    private void allyTick(ServerLevel sw, Player user, List<Mob> allies, Set<UUID> ids, int remaining, double followSq) {
+      this.allyTick(sw, user, allies, ids, remaining, followSq, true);
+   }
+
+   private void allyTick(ServerLevel sw, Player user, List<Mob> allies, Set<UUID> ids, int remaining, double followSq, boolean discardAtEnd) {
       boolean any = false;
       LivingEntity attacker = user.getLastHurtByMob();
 
@@ -974,7 +985,12 @@ public class LuckyBlockItem extends Item {
             any = true;
             if (remaining <= 0) {
                Fx.burst(sw, ParticleTypes.POOF, a.getX(), a.getY() + 1.0, a.getZ(), 30, 0.5, 0.8, 0.5, 0.05);
-               a.discard();
+               if (discardAtEnd) {
+                  a.discard();
+               } else {
+                  a.removeTag("lbm_ally");
+                  a.removeTag("lbm_owner_" + user.getUUID());
+               }
             } else {
                AllyCode.tick(sw, user, a, ids, remaining, followSq);
 
@@ -1002,7 +1018,7 @@ public class LuckyBlockItem extends Item {
       }
 
       if (any && remaining > 0) {
-         Scheduler.later(1, () -> this.allyTick(sw, user, allies, ids, remaining - 1, followSq));
+         Scheduler.later(1, () -> this.allyTick(sw, user, allies, ids, remaining - 1, followSq, discardAtEnd));
       }
    }
 
@@ -1906,6 +1922,64 @@ public class LuckyBlockItem extends Item {
             });
          }
       });
+   }
+
+   /** "Come": mind controls the aimed mob and every mob near it. They serve and protect the player under the hardcoded ally law. */
+   private void mindControl(ServerLevel sw, Player user) {
+      msg(user, "\u00a75\u00a7lCOME.");
+      if (user instanceof ServerPlayer sp) {
+         sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(3, 25, 10));
+         sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(Component.literal("\u00a75\u00a7oCome.")));
+      }
+      LuckyBlockItem.Target tg = pickTarget(sw, user, 60.0);
+      Vec3 c = tg.pos();
+      Fx.sound(sw, user.blockPosition(), SoundEvents.EVOKER_PREPARE_SUMMON, 3.0F, 0.5F);
+      Fx.sound(sw, user.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 3.0F, 0.6F);
+      Fx.screen(sw, user.position(), 48.0, 0.3F, 0.8F, 14, 0x8A2BE2);
+      List<Mob> chosen = new ArrayList<>();
+      Set<UUID> ids = new HashSet<>();
+      if (tg.entity() instanceof Mob m0 && m0.isAlive() && !m0.getTags().contains("lbm_ally")) {
+         chosen.add(m0);
+      }
+      for (Mob m : sw.getEntitiesOfClass(Mob.class, new AABB(c, c).inflate(7.0), mx -> mx.isAlive() && !mx.getTags().contains("lbm_ally") && !chosen.contains(mx))) {
+         if (chosen.size() >= 16) {
+            break;
+         }
+         chosen.add(m);
+      }
+      if (chosen.isEmpty()) {
+         msg(user, "\u00a77Nothing answered.");
+         return;
+      }
+      DustParticleOptions violet = new DustParticleOptions(new Vector3f(0.6F, 0.15F, 0.95F), 1.5F);
+      for (Mob mob : chosen) {
+         mob.setTarget(null);
+         mob.setLastHurtByMob(null);
+         if (mob instanceof net.minecraft.world.entity.NeutralMob nm) {
+            nm.stopBeingAngry();
+         }
+         try {
+            mob.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.ATTACK_TARGET);
+            mob.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.ANGRY_AT);
+         } catch (Throwable ignored) {
+         }
+         AllyCode.bind(mob, user);
+         mob.addEffect(new MobEffectInstance(MobEffects.GLOWING, 100, 0, false, false));
+         mob.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 6000, 1));
+         mob.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 6000, 1));
+         ids.add(mob.getUUID());
+         for (int k = 0; k < 8; k++) {
+            int kk = k;
+            Scheduler.later(k * 2 + 1, () -> {
+               Fx.ring(sw, violet, mob.getX(), mob.getY() + 0.2 + kk * 0.25, mob.getZ(), 0.9 - kk * 0.08, 18);
+               Fx.burst(sw, ParticleTypes.ENCHANT, mob.getX(), mob.getY() + 1.0, mob.getZ(), 8, 0.4, 0.6, 0.4, 0.4);
+            });
+         }
+         Fx.sound(sw, mob.blockPosition(), SoundEvents.ENDERMAN_STARE, 1.5F, 1.6F);
+      }
+      Fx.rune(sw, violet, ParticleTypes.WITCH, c.x, c.y + 0.2, c.z, 7.0, 0.0);
+      msg(user, "\u00a75" + chosen.size() + " mind(s) now serve you.");
+      this.allyTick(sw, user, chosen, ids, 6000, 36.0, false);
    }
 
    private void allyCommand(ServerLevel sw, Player user) {
