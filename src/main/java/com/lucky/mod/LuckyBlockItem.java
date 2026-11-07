@@ -126,6 +126,9 @@ public class LuckyBlockItem extends Item {
    public void castAbility(ServerLevel sw, Player user, int a) {
       Shapes.signature(sw, user, a);
       this.castCore(sw, user, a);
+      if (a < Abilities.BASE) {
+         Rework.after(sw, user, a);
+      }
    }
 
    private void castCore(ServerLevel sw, Player user, int a) {
