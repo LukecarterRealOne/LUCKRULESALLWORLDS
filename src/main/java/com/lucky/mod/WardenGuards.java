@@ -15,7 +15,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public final class WardenGuards {
    private static final String OWN_TEAM = "lbm_guard";
@@ -33,7 +33,7 @@ public final class WardenGuards {
 
    public static EntityType<?> wardenType() {
       try {
-         Object var0 = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation("minecraft", "warden"));
+         Object var0 = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.fromNamespaceAndPath("minecraft", "warden"));
          if (var0 instanceof EntityType) {
             return (EntityType<?>)var0;
          }

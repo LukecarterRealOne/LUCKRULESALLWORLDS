@@ -1,11 +1,18 @@
 package com.lucky.mod;
 
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent.Context;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public class SelectPacket {
+public class SelectPacket implements CustomPacketPayload {
+   public static final Type<SelectPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("luckyblockmod", "select"));
+   public static final StreamCodec<FriendlyByteBuf, SelectPacket> CODEC = StreamCodec.of((buf, m) -> {
+      buf.writeInt(m.ability);
+      buf.writeInt(m.castNow);
+   }, buf -> new SelectPacket(buf.readInt(), buf.readInt()));
    public final int ability;
    public final int castNow;
 
@@ -14,22 +21,16 @@ public class SelectPacket {
       this.castNow = castNow;
    }
 
-   public static void encode(SelectPacket m, FriendlyByteBuf buf) {
-      buf.writeInt(m.ability);
-      buf.writeInt(m.castNow);
+   @Override
+   public Type<? extends CustomPacketPayload> type() {
+      return TYPE;
    }
 
-   public static SelectPacket decode(FriendlyByteBuf buf) {
-      return new SelectPacket(buf.readInt(), buf.readInt());
-   }
-
-   public static void handle(SelectPacket m, Supplier<Context> ctx) {
-      ctx.get().enqueueWork(() -> {
-         ServerPlayer sender = ctx.get().getSender();
-         if (sender != null) {
+   public static void handle(SelectPacket m, IPayloadContext ctx) {
+      ctx.enqueueWork(() -> {
+         if (ctx.player() instanceof ServerPlayer sender) {
             LuckyBlockItem.onSelect(sender, m.ability, m.castNow == 1);
          }
       });
-      ctx.get().setPacketHandled(true);
    }
 }

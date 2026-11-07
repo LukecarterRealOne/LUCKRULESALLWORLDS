@@ -6,5 +6,5 @@
     "D": { "item": "minecraft:diamond" },
     "N": { "item": "minecraft:nether_star" }
   },
-  "result": { "item": "luckyblockmod:lucky_block", "count": 1 }
+  "result": { "id": "luckyblockmod:lucky_block", "count": 1 }
 }

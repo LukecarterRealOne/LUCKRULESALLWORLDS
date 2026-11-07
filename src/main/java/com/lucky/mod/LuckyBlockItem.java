@@ -52,14 +52,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ClipContext.Block;
 import net.minecraft.world.level.ClipContext.Fluid;
 import net.minecraft.world.level.Level.ExplosionInteraction;
-import net.minecraft.world.level.portal.PortalInfo;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
-import net.minecraftforge.common.util.ITeleporter;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -91,7 +89,7 @@ public class LuckyBlockItem extends Item {
       super(properties);
    }
 
-   public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+   public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
       tooltip.add(Component.literal("\u00a7ePassive: \u00a7fDouble-speed flight while carried"));
       tooltip.add(Component.literal("\u00a77Flight speed: 2\u00d7 vanilla creative speed"));
       tooltip.add(Component.literal("\u00a78Double-tap jump to take off"));
@@ -529,7 +527,7 @@ public class LuckyBlockItem extends Item {
          Vec3 closest = b.eye().add(b.dir().scale(t));
          if (closest.distanceTo(center) <= radius) {
             e.hurt(sw.damageSources().indirectMagic(user, user), dmg);
-            e.setSecondsOnFire(10);
+            e.igniteForSeconds(10);
             push(e, b.dir().x * 0.8, 0.3, b.dir().z * 0.8);
             Fx.burst(sw, ParticleTypes.EXPLOSION, e.getX(), e.getY() + (double)(e.getBbHeight() / 2.0F), e.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
          }
@@ -613,7 +611,7 @@ public class LuckyBlockItem extends Item {
       for (int i = 0; i < 8; i++) {
          Vec3 start = target.add((sw.random.nextDouble() - 0.5) * 12.0, 25.0 + sw.random.nextDouble() * 8.0, (sw.random.nextDouble() - 0.5) * 12.0);
          Scheduler.later(i * 4 + 1, () -> {
-            LargeFireball fb = new LargeFireball(sw, user, 0.0, -1.2, 0.0, 2);
+            LargeFireball fb = new LargeFireball(sw, user, new Vec3(0.0, -1.2, 0.0), 2);
             fb.setPos(start.x, start.y, start.z);
             sw.addFreshEntity(fb);
             fireballs.add(fb);
@@ -722,7 +720,7 @@ public class LuckyBlockItem extends Item {
    private void itemRain(ServerLevel sw, Player user) {
       List<Item> all = new ArrayList<>();
 
-      for (Item item : ForgeRegistries.ITEMS) {
+      for (Item item : BuiltInRegistries.ITEM) {
          if (item != Items.AIR) {
             all.add(item);
          }
@@ -834,7 +832,7 @@ public class LuckyBlockItem extends Item {
          mob.moveTo(pos.x, pos.y, pos.z, user.getYRot(), 0.0F);
 
          try {
-            mob.finalizeSpawn(sw, sw.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.MOB_SUMMONED, null, null);
+            mob.finalizeSpawn(sw, sw.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.MOB_SUMMONED, null);
          } catch (Exception var11) {
          }
 
@@ -883,8 +881,8 @@ public class LuckyBlockItem extends Item {
    private static List<EntityType<?>> allyPool(ServerLevel sw) {
       if (ALLY_POOL == null) {
          List<EntityType<?>> out = new ArrayList<>();
-         for (ResourceLocation id : ForgeRegistries.ENTITY_TYPES.getKeys()) {
-            EntityType<?> type = (EntityType<?>)ForgeRegistries.ENTITY_TYPES.getValue(id);
+         for (ResourceLocation id : BuiltInRegistries.ENTITY_TYPE.keySet()) {
+            EntityType<?> type = (EntityType<?>)BuiltInRegistries.ENTITY_TYPE.get(id);
             if (type == null || !type.canSummon() || type == EntityType.ENDER_DRAGON || type == EntityType.WITHER
                || type == EntityType.GIANT || type == EntityType.PLAYER || id.getNamespace().equals("luckyblockmod")) {
                continue;
@@ -1111,7 +1109,7 @@ public class LuckyBlockItem extends Item {
             double dz = e.getZ() - c.z;
             if (dx * dx + dz * dz <= 81.0) {
                e.hurt(sw.damageSources().indirectMagic(user, user), 60.0F);
-               e.setSecondsOnFire(10);
+               e.igniteForSeconds(10);
                push(e, 0.0, 0.6, 0.0);
             }
          }
@@ -1146,7 +1144,7 @@ public class LuckyBlockItem extends Item {
       for (LivingEntity e : sw.getEntitiesOfClass(LivingEntity.class, zone, ex -> !friend(ex, user))) {
          if (e.distanceToSqr(c) <= 144.0) {
             e.hurt(sw.damageSources().indirectMagic(user, user), 100.0F);
-            e.setSecondsOnFire(10);
+            e.igniteForSeconds(10);
          }
       }
 
@@ -1486,7 +1484,7 @@ public class LuckyBlockItem extends Item {
                double dist = to.length();
                if (!(dist > 22.0) && !(dist < 0.1) && !(to.normalize().dot(dir) < 0.88)) {
                   e.hurt(sw.damageSources().magic(), 14.0F);
-                  e.setSecondsOnFire(8);
+                  e.igniteForSeconds(8);
                }
             }
 
@@ -1501,7 +1499,7 @@ public class LuckyBlockItem extends Item {
       } else {
          List<EntityType<?>> found = new ArrayList<>();
 
-         for (EntityType<?> type : ForgeRegistries.ENTITY_TYPES) {
+         for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
             Entity probe = null;
 
             try {
@@ -1536,14 +1534,14 @@ public class LuckyBlockItem extends Item {
          l.add(w -> EntityType.ARROW.create(w));
          l.add(w -> EntityType.SPECTRAL_ARROW.create(w));
          l.add(w -> EntityType.ENDER_PEARL.create(w));
-         for (net.minecraft.world.item.alchemy.Potion potion : ForgeRegistries.POTIONS) {
-            if (potion == net.minecraft.world.item.alchemy.Potions.EMPTY) {
+         for (net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> potion : (Iterable<net.minecraft.core.Holder.Reference<net.minecraft.world.item.alchemy.Potion>>)BuiltInRegistries.POTION.holders()::iterator) {
+            if (potion.value() == net.minecraft.world.item.alchemy.Potions.WATER.value()) {
                continue;
             }
             l.add(w -> {
                net.minecraft.world.entity.projectile.Arrow a = EntityType.ARROW.create(w);
                if (a != null) {
-                  a.setEffectsFromItem(net.minecraft.world.item.alchemy.PotionUtils.setPotion(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.TIPPED_ARROW), potion));
+                  a.setEffectsFromItem(net.minecraft.world.item.alchemy.PotionContents.createItemStack(net.minecraft.world.item.Items.TIPPED_ARROW, potion));
                   a.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.DISALLOWED;
                }
                return a;
@@ -2090,7 +2088,7 @@ public class LuckyBlockItem extends Item {
             };
          }).thenComparing(String::compareToIgnoreCase));
          String selected = SELECTED_DIMENSIONS.containsKey(player.getUUID()) ? SELECTED_DIMENSIONS.get(player.getUUID()).location().toString() : "";
-         LuckyBlockMod.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new OpenDimensionPickerPacket(dimensions, selected));
+         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new OpenDimensionPickerPacket(dimensions, selected));
          msg(player, "\u00a76Choose a destination dimension (vanilla + modded).\u00a7r");
          Fx.burst(sw, ParticleTypes.REVERSE_PORTAL, player.getX(), player.getY() + 1.0, player.getZ(), 16, 0.4, 0.7, 0.4, 0.08);
          return;
@@ -2170,13 +2168,9 @@ public class LuckyBlockItem extends Item {
       return new BlockPos(spawn.getX() + offsetX, y, spawn.getZ() + offsetZ);
    }
 
-   private static ITeleporter directTeleporter(final BlockPos arrival) {
-      return new ITeleporter() {
-         public PortalInfo getPortalInfo(Entity entity, ServerLevel destination, Function<ServerLevel, PortalInfo> defaultPortalInfo) {
-            Vec3 pos = new Vec3((double)arrival.getX() + 0.5, (double)arrival.getY(), (double)arrival.getZ() + 0.5);
-            return new PortalInfo(pos, Vec3.ZERO, entity.getYRot(), entity.getXRot());
-         }
-      };
+   private static net.minecraft.world.level.portal.DimensionTransition directTransition(Entity entity, ServerLevel destination, final BlockPos arrival) {
+      Vec3 pos = new Vec3((double)arrival.getX() + 0.5, (double)arrival.getY(), (double)arrival.getZ() + 0.5);
+      return new net.minecraft.world.level.portal.DimensionTransition(destination, pos, Vec3.ZERO, entity.getYRot(), entity.getXRot(), net.minecraft.world.level.portal.DimensionTransition.DO_NOTHING);
    }
 
    private void dimensionTravel(ServerLevel sw, Player user) {
@@ -2193,7 +2187,7 @@ public class LuckyBlockItem extends Item {
             Vec3 from = player.position();
             Fx.burst(sw, ParticleTypes.REVERSE_PORTAL, from.x, from.y + 1.0, from.z, 36, 1.0, 1.0, 1.0, 0.12);
             Fx.sound(sw, player.blockPosition(), SoundEvents.ENDERMAN_TELEPORT, 2.5F, 0.8F);
-            if (player.changeDimension(destination, directTeleporter(arrival)) instanceof ServerPlayer arrived) {
+            if (player.changeDimension(directTransition(player, destination, arrival)) instanceof ServerPlayer arrived) {
                arrived.fallDistance = 0.0F;
                arrived.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 160, 2));
                arrived.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 100, 0));
@@ -2236,7 +2230,7 @@ public class LuckyBlockItem extends Item {
                   Entity entity = targets.get(index);
                   if (!entity.isRemoved() && entity.canChangeDimensions()) {
                      BlockPos arrival = findArrival(destination, index);
-                     Entity moved = entity.changeDimension(destination, directTeleporter(arrival));
+                     Entity moved = entity.changeDimension(directTransition(entity, destination, arrival));
                      if (moved != null) {
                         if (++transferred <= 8) {
                            Fx.burst(destination, ParticleTypes.PORTAL, moved.getX(), moved.getY() + 0.5, moved.getZ(), 7, 0.25, 0.5, 0.25, 0.04);
@@ -2297,7 +2291,7 @@ public class LuckyBlockItem extends Item {
    private void itemWish(ServerLevel sw, Player user) {
       if (user instanceof ServerPlayer player) {
          msg(user, "\u00a76\u00a7lCHOOSE ANY REGISTERED ITEM \u2014 catalogue opened.");
-         LuckyBlockMod.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new OpenItemWishPacket());
+         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new OpenItemWishPacket());
          Fx.burst(sw, ParticleTypes.TOTEM_OF_UNDYING, user.getX(), user.getY() + 1.0, user.getZ(), 24, 0.6, 0.8, 0.6, 0.12);
          Fx.sound(sw, user.blockPosition(), SoundEvents.PLAYER_LEVELUP, 1.6F, 1.3F);
       }

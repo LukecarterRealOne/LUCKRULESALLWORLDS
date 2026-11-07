@@ -455,7 +455,7 @@ public final class GoldenMight {
                double var11 = var6.getZ();
                this.beam(this.ox, this.oy - var1 * 0.5, this.oz, var7, var9, var11, 1.1, "minecraft:yellow_stained_glass", "minecraft:white_concrete", 6, false);
                this.hurt(var6, 60.0F);
-               var6.setSecondsOnFire(4);
+               var6.igniteForSeconds(4);
                Fx.burst(this.lv, ParticleTypes.EXPLOSION, var7, var9, var11, 14, 0.4, 0.6, 0.4, 0.12);
                Fx.ring(this.lv, this.gold, var7, var6.getY() + 0.1, var11, 1.6, 12);
                this.snd("minecraft:entity.lightning_bolt.impact", var7, var9, var11, 2.5F, 1.8F);
@@ -592,7 +592,7 @@ public final class GoldenMight {
                double var9 = var4.getZ();
                this.beam(this.ox, this.oy, this.oz, var5, var7, var9, 2.6, "minecraft:orange_stained_glass", "minecraft:white_concrete", 10, true);
                this.hurt(var4, 200.0F);
-               var4.setSecondsOnFire(8);
+               var4.igniteForSeconds(8);
                Fx.epicImpact(this.lv, new Vec3(var5, var7, var9), ParticleTypes.EXPLOSION, ParticleTypes.PORTAL, 4.0, 8);
                Fx.ring(this.lv, this.white, var5, var4.getY() + 0.1, var9, 2.4, 14);
                this.snd("minecraft:entity.generic.explode", var5, var7, var9, 3.0F, 1.3F);
@@ -656,7 +656,7 @@ public final class GoldenMight {
                      double var11 = var6.getZ();
                      this.beam(this.ox, this.oy, this.oz, var7, var9, var11, 5.0, "minecraft:yellow_stained_glass", "minecraft:white_concrete", 30, true);
                      this.hurt(var6, 1000.0F);
-                     var6.setSecondsOnFire(15);
+                     var6.igniteForSeconds(15);
                      Fx.epicImpact(this.lv, new Vec3(var7, var9, var11), ParticleTypes.EXPLOSION, ParticleTypes.PORTAL, 6.0, 10);
                      var6.setDeltaMovement(0.0, 0.8, 0.0);
                      var6.hurtMarked = true;
@@ -1093,7 +1093,7 @@ public final class GoldenMight {
             LivingEntity var2 = this.boxed.get(var12);
             if (var2.isAlive()) {
                this.hurt(var2, 25000.0F);
-               var2.setSecondsOnFire(20);
+               var2.igniteForSeconds(20);
                if (var2 instanceof Mob) {
                   Mob var3 = (Mob)var2;
                   if (this.aiFrozen.contains(var3.getUUID()) && var3.isAlive()) {

@@ -9,7 +9,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /** Server side of the "the block shattered" death cutscene. Length must match ClientState.CUTSCENE_LEN. */
 public final class Cutscene {
@@ -29,7 +29,7 @@ public final class Cutscene {
       p.setInvulnerable(true);
       p.removeAllEffects();
       freeze(p);
-      LuckyBlockMod.CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), new CutscenePacket());
+      net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p, new CutscenePacket());
       Scheduler.later(REVIVE_AT, () -> revive(p));
    }
 

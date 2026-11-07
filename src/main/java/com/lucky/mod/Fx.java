@@ -14,7 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public class Fx {
    private static final int MAX_BURST_PARTICLES = 24;
@@ -347,7 +347,7 @@ public class Fx {
                LAST_SCREEN_TICK.put(id, tick);
             }
 
-            LuckyBlockMod.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new FxPacket(flash, shake, duration, color));
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new FxPacket(flash, shake, duration, color));
          }
       }
    }

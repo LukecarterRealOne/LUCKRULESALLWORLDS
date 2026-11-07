@@ -13,18 +13,17 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.TickEvent.Phase;
-import net.minecraftforge.event.TickEvent.PlayerTickEvent;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
-import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.monster.warden.Warden;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 @EventBusSubscriber(
    modid = "luckyblockmod"
@@ -39,9 +38,9 @@ public class Events {
    }
 
    @SubscribeEvent
-   public static void onPlayerTick(PlayerTickEvent event) {
-      if (event.phase == Phase.END && !event.player.level().isClientSide) {
-         Player player = event.player;
+   public static void onPlayerTick(PlayerTickEvent.Post event) {
+      if (!event.getEntity().level().isClientSide) {
+         Player player = event.getEntity();
          boolean hasLuckyBlock = player.getInventory().items.stream().anyMatch(stack -> stack.is((Item)LuckyBlockMod.LUCKY_BLOCK.get()))
             || player.getOffhandItem().is((Item)LuckyBlockMod.LUCKY_BLOCK.get());
          CompoundTag data = player.getPersistentData();
@@ -92,7 +91,7 @@ public class Events {
    }
 
    @SubscribeEvent
-   public static void onAttack(LivingAttackEvent event) {
+   public static void onAttack(LivingIncomingDamageEvent event) {
       if (event.getEntity() instanceof Player player) {
          DamageSource var5 = event.getSource();
          if (LuckyBlockItem.SHIELDED.contains(player.getUUID()) && !var5.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
@@ -134,7 +133,7 @@ public class Events {
 
    /** Any non-Warden ally (brain or goal driven): never keeps the owner / a player / another ally as a target. */
    @SubscribeEvent
-   public static void onAllyBrainTick(LivingEvent.LivingTickEvent event) {
+   public static void onAllyBrainTick(EntityTickEvent.Post event) {
       if (!(event.getEntity() instanceof net.minecraft.world.entity.Mob mob) || mob.level().isClientSide || mob instanceof Warden) return;
       if (!mob.getTags().contains("lbm_ally") || mob.tickCount % 2 != 0) return;
       LivingEntity t = mob.getTarget();
@@ -151,7 +150,7 @@ public class Events {
 
    /** Summoned wardens never keep a player or ally as a target: wipe brain memory + anger every other tick. */
    @SubscribeEvent
-   public static void onGuardTick(LivingEvent.LivingTickEvent event) {
+   public static void onGuardTick(EntityTickEvent.Post event) {
       if (!(event.getEntity() instanceof Warden warden) || warden.level().isClientSide) return;
       if (!warden.getTags().contains("lbm_ally") || warden.tickCount % 2 != 0) return;
       for (Player p : warden.level().players()) {
@@ -168,8 +167,8 @@ public class Events {
 
    @SubscribeEvent
    public static void onGuardRetarget(LivingChangeTargetEvent event) {
-      if (event.getEntity().getTags().contains("lbm_ally") && event.getNewTarget() != null && protectedFromGuard(event.getNewTarget())) {
-         event.setNewTarget(null);
+      if (event.getEntity().getTags().contains("lbm_ally") && event.getNewAboutToBeSetTarget() != null && protectedFromGuard(event.getNewAboutToBeSetTarget())) {
+         event.setNewAboutToBeSetTarget(null);
       }
    }
 
@@ -183,9 +182,9 @@ public class Events {
 
    /** A shattered block leaks gold light from its cracks while carried; sparks drift off the hand, shards fall. */
    @SubscribeEvent
-   public static void onShardAura(net.minecraftforge.event.TickEvent.PlayerTickEvent event) {
-      if (event.phase != net.minecraftforge.event.TickEvent.Phase.END || event.player.level().isClientSide) return;
-      Player p = event.player;
+   public static void onShardAura(PlayerTickEvent.Post event) {
+      if (event.getEntity().level().isClientSide)) return;
+      Player p = event.getEntity();
       if (p.tickCount % 4 != 0) return;
       boolean held = (p.getMainHandItem().getItem() instanceof LuckyBlockItem && Shards.isShattered(p.getMainHandItem()))
          || (p.getOffhandItem().getItem() instanceof LuckyBlockItem && Shards.isShattered(p.getOffhandItem()));

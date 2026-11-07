@@ -1,32 +1,32 @@
 package com.lucky.mod;
 
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent.Context;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public final class ChooseDimensionPacket {
+public final class ChooseDimensionPacket implements CustomPacketPayload {
+   public static final Type<ChooseDimensionPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("luckyblockmod", "choose_dimension"));
+   public static final StreamCodec<FriendlyByteBuf, ChooseDimensionPacket> CODEC = StreamCodec.of(
+      (buf, m) -> buf.writeUtf(m.dimensionId, 256), buf -> new ChooseDimensionPacket(buf.readUtf(256)));
    public final String dimensionId;
 
    public ChooseDimensionPacket(String dimensionId) {
       this.dimensionId = dimensionId == null ? "" : dimensionId;
    }
 
-   public static void encode(ChooseDimensionPacket message, FriendlyByteBuf buf) {
-      buf.writeUtf(message.dimensionId, 256);
+   @Override
+   public Type<? extends CustomPacketPayload> type() {
+      return TYPE;
    }
 
-   public static ChooseDimensionPacket decode(FriendlyByteBuf buf) {
-      return new ChooseDimensionPacket(buf.readUtf(256));
-   }
-
-   public static void handle(ChooseDimensionPacket message, Supplier<Context> context) {
-      context.get().enqueueWork(() -> {
-         ServerPlayer sender = context.get().getSender();
-         if (sender != null) {
+   public static void handle(ChooseDimensionPacket message, IPayloadContext ctx) {
+      ctx.enqueueWork(() -> {
+         if (ctx.player() instanceof ServerPlayer sender) {
             LuckyBlockItem.onDimensionSelected(sender, message.dimensionId);
          }
       });
-      context.get().setPacketHandled(true);
    }
 }

@@ -92,7 +92,7 @@ public final class DimensionPickerScreen extends Screen {
    }
 
    private void select(String id) {
-      LuckyBlockMod.CHANNEL.sendToServer(new ChooseDimensionPacket(id));
+      net.neoforged.neoforge.network.PacketDistributor.sendToServer(new ChooseDimensionPacket(id));
       this.onClose();
    }
 

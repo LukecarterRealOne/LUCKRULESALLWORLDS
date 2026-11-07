@@ -85,7 +85,7 @@ public class AbilityScreen extends Screen {
 
    private void choose(int id) {
       lastPage = this.page;
-      LuckyBlockMod.CHANNEL.sendToServer(new SelectPacket(id, castNow ? 1 : 0));
+      net.neoforged.neoforge.network.PacketDistributor.sendToServer(new SelectPacket(id, castNow ? 1 : 0));
       this.onClose();
    }
 

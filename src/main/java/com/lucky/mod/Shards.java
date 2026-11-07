@@ -41,12 +41,12 @@ public final class Shards {
    }
 
    public static boolean isShattered(ItemStack s) {
-      CompoundTag t = s.getTag();
-      return t != null && t.getBoolean("Shattered");
+      net.minecraft.world.item.component.CustomData cd = s.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+      return cd != null && cd.copyTag().getBoolean("Shattered");
    }
 
    public static void shatter(ItemStack s) {
-      s.getOrCreateTag().putBoolean("Shattered", true);
+      net.minecraft.world.item.component.CustomData.update(net.minecraft.core.component.DataComponents.CUSTOM_DATA, s, t -> t.putBoolean("Shattered", true));
    }
 
    private static boolean friend(Entity e, Player u) {

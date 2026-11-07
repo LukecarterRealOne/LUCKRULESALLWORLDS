@@ -1,13 +1,12 @@
 package com.lucky.mod;
 
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiEvent.Post;
-import net.minecraftforge.client.event.ViewportEvent.ComputeCameraAngles;
-import net.minecraftforge.event.TickEvent.ClientTickEvent;
-import net.minecraftforge.event.TickEvent.Phase;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderGuiEvent.Post;
+import net.neoforged.neoforge.client.event.ViewportEvent.ComputeCameraAngles;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 @EventBusSubscriber(
    modid = "luckyblockmod",
@@ -18,8 +17,8 @@ public class ClientEvents {
    }
 
    @SubscribeEvent
-   public static void onClientTick(ClientTickEvent event) {
-      if (event.phase == Phase.END) {
+   public static void onClientTick(ClientTickEvent.Post event) {
+      {
          ClientState.tick();
          Minecraft mc = Minecraft.getInstance();
 
@@ -110,7 +109,7 @@ public class ClientEvents {
 
    /** No inventory or other menus while the death cutscene plays (pause menu still works). */
    @SubscribeEvent
-   public static void onScreenOpen(net.minecraftforge.client.event.ScreenEvent.Opening event) {
+   public static void onScreenOpen(net.neoforged.neoforge.client.event.ScreenEvent.Opening event) {
       if (ClientState.cutscene >= 0 && event.getNewScreen() != null && !(event.getNewScreen() instanceof net.minecraft.client.gui.screens.PauseScreen)) {
          event.setCanceled(true);
       }
@@ -118,7 +117,7 @@ public class ClientEvents {
 
    /** Hide the "Killed <name>" / death lines the game prints for the death the block just cancelled. */
    @SubscribeEvent
-   public static void onChatLine(net.minecraftforge.client.event.ClientChatReceivedEvent event) {
+   public static void onChatLine(net.neoforged.neoforge.client.event.ClientChatReceivedEvent event) {
       if (ClientState.cutscene >= 0 && event.getMessage().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc
          && (tc.getKey().startsWith("death.") || tc.getKey().startsWith("commands.kill"))) {
          event.setCanceled(true);

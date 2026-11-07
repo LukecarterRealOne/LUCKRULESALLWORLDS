@@ -1,12 +1,20 @@
 package com.lucky.mod;
 
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent.Context;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public class FxPacket {
+public class FxPacket implements CustomPacketPayload {
+   public static final Type<FxPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("luckyblockmod", "fx"));
+   public static final StreamCodec<FriendlyByteBuf, FxPacket> CODEC = StreamCodec.of((buf, m) -> {
+      buf.writeFloat(m.flash);
+      buf.writeFloat(m.shake);
+      buf.writeInt(m.duration);
+      buf.writeInt(m.color);
+   }, buf -> new FxPacket(buf.readFloat(), buf.readFloat(), buf.readInt(), buf.readInt()));
    public final float flash;
    public final float shake;
    public final int duration;
@@ -19,19 +27,12 @@ public class FxPacket {
       this.color = color;
    }
 
-   public static void encode(FxPacket m, FriendlyByteBuf buf) {
-      buf.writeFloat(m.flash);
-      buf.writeFloat(m.shake);
-      buf.writeInt(m.duration);
-      buf.writeInt(m.color);
+   @Override
+   public Type<? extends CustomPacketPayload> type() {
+      return TYPE;
    }
 
-   public static FxPacket decode(FriendlyByteBuf buf) {
-      return new FxPacket(buf.readFloat(), buf.readFloat(), buf.readInt(), buf.readInt());
-   }
-
-   public static void handle(FxPacket m, Supplier<Context> ctx) {
-      ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientState.receive(m.flash, m.shake, m.duration, m.color)));
-      ctx.get().setPacketHandled(true);
+   public static void handle(FxPacket m, IPayloadContext ctx) {
+      ctx.enqueueWork(() -> ClientState.receive(m.flash, m.shake, m.duration, m.color));
    }
 }

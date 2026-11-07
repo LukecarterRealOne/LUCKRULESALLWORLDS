@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class ItemWishScreen extends Screen {
    private static final int PAGE_SIZE = 10;
@@ -32,9 +32,9 @@ public class ItemWishScreen extends Screen {
    public ItemWishScreen() {
       super(Component.literal("Lucky Wish Catalogue"));
 
-      for (Item item : ForgeRegistries.ITEMS) {
+      for (Item item : BuiltInRegistries.ITEM) {
          if (item != null && item != Items.AIR) {
-            ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
             if (id != null) {
                this.allItems.add(id);
             }
@@ -99,7 +99,7 @@ public class ItemWishScreen extends Screen {
       this.filteredItems.clear();
 
       for (ResourceLocation id : this.allItems) {
-         Item item = (Item)ForgeRegistries.ITEMS.getValue(id);
+         Item item = (Item)BuiltInRegistries.ITEM.get(id);
          String itemName = item == null ? "" : item.getDescription().getString().toLowerCase(Locale.ROOT);
          if (query.isEmpty() || id.toString().toLowerCase(Locale.ROOT).contains(query) || itemName.contains(query)) {
             this.filteredItems.add(id);
@@ -128,7 +128,7 @@ public class ItemWishScreen extends Screen {
    }
 
    private static String shortName(ResourceLocation id) {
-      Item item = (Item)ForgeRegistries.ITEMS.getValue(id);
+      Item item = (Item)BuiltInRegistries.ITEM.get(id);
       String name = item == null ? id.toString() : item.getDescription().getString();
       return name.length() <= 24 ? name : name.substring(0, 21) + "\u2026";
    }
@@ -136,7 +136,7 @@ public class ItemWishScreen extends Screen {
    private void choose(int slot) {
       int index = this.page * 10 + slot;
       if (index >= 0 && index < this.filteredItems.size()) {
-         LuckyBlockMod.CHANNEL.sendToServer(new WishItemPacket(this.filteredItems.get(index)));
+         net.neoforged.neoforge.network.PacketDistributor.sendToServer(new WishItemPacket(this.filteredItems.get(index)));
          this.onClose();
       }
    }
@@ -152,7 +152,7 @@ public class ItemWishScreen extends Screen {
          int y = this.startY + slot / 2 * this.rowStep;
          if (mouseX >= (double)x && mouseX < (double)(x + this.buttonWidth) && mouseY >= (double)y && mouseY < (double)(y + this.buttonHeight)) {
             ResourceLocation id = this.filteredItems.get(index);
-            Item item = (Item)ForgeRegistries.ITEMS.getValue(id);
+            Item item = (Item)BuiltInRegistries.ITEM.get(id);
             String name = item == null ? id.toString() : item.getDescription().getString();
             return name + "  \u2022  " + id;
          }

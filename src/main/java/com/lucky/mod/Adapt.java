@@ -11,14 +11,13 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
-import net.minecraftforge.event.entity.living.MobEffectEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.joml.Vector3f;
 
 /** ADAPTATION: after the cutscene you become immune to every damage type and harmful effect once it has hurt you. */
@@ -31,10 +30,10 @@ public final class Adapt {
    }
 
    private static CompoundTag data(Player p) {
-      CompoundTag persisted = p.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+      CompoundTag persisted = p.getPersistentData().getCompound("lbm_persist");
       CompoundTag d = persisted.getCompound(ROOT);
       persisted.put(ROOT, d);
-      p.getPersistentData().put(Player.PERSISTED_NBT_TAG, persisted);
+      p.getPersistentData().put("lbm_persist", persisted);
       return d;
    }
 
@@ -91,14 +90,14 @@ public final class Adapt {
    }
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)
-   public static void onAttack(LivingAttackEvent event) {
+   public static void onAttack(LivingIncomingDamageEvent event) {
       if (event.getEntity() instanceof ServerPlayer sp && active(sp) && "genericKill".equals(event.getSource().getMsgId())) {
          // /kill: refuse it, make a scene, and adapt to it for good.
          event.setCanceled(true);
          if (!adapted(sp, "dmg:genericKill") && PENDING.add(sp.getUUID())) {
             sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(4, 50, 12));
             sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(Component.literal("\u00a7c\u00a7lNot on my watch.")));
-            LuckyBlockMod.CHANNEL.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> sp), new CutscenePacket(1));
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(sp, new CutscenePacket(1));
             if (sp.level() instanceof ServerLevel sw) {
                Fx.sound(sw, sp.blockPosition(), SoundEvents.WARDEN_SONIC_BOOM, 2.0F, 1.4F);
                Fx.sound(sw, sp.blockPosition(), SoundEvents.ANVIL_LAND, 1.5F, 0.6F);
@@ -132,8 +131,8 @@ public final class Adapt {
    }
 
    @SubscribeEvent
-   public static void onDamaged(LivingDamageEvent event) {
-      if (event.getEntity() instanceof Player p && !p.level().isClientSide && active(p) && event.getAmount() > 0.0F) {
+   public static void onDamaged(LivingDamageEvent.Post event) {
+      if (event.getEntity() instanceof Player p && !p.level().isClientSide && active(p) && event.getNewDamage() > 0.0F) {
          String id = event.getSource().getMsgId();
          if (!event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY) && !adapted(p, "dmg:" + id)) {
             learn(p, "dmg:" + id, id.replace('_', ' ').toUpperCase());
@@ -144,19 +143,19 @@ public final class Adapt {
    @SubscribeEvent
    public static void onEffectApplicable(MobEffectEvent.Applicable event) {
       if (event.getEntity() instanceof Player p && !p.level().isClientSide && active(p)
-         && event.getEffectInstance().getEffect().getCategory() != MobEffectCategory.BENEFICIAL
-         && adapted(p, "fx:" + event.getEffectInstance().getEffect().getDescriptionId())) {
-         event.setResult(Event.Result.DENY);
+         && event.getEffectInstance().getEffect().value().getCategory() != MobEffectCategory.BENEFICIAL
+         && adapted(p, "fx:" + event.getEffectInstance().getEffect().value().getDescriptionId())) {
+         event.setResult(MobEffectEvent.Applicable.Result.DO_NOT_APPLY);
       }
    }
 
    @SubscribeEvent
    public static void onEffectAdded(MobEffectEvent.Added event) {
       if (event.getEntity() instanceof Player p && !p.level().isClientSide && active(p)
-         && event.getEffectInstance().getEffect().getCategory() != MobEffectCategory.BENEFICIAL) {
-         String key = "fx:" + event.getEffectInstance().getEffect().getDescriptionId();
+         && event.getEffectInstance().getEffect().value().getCategory() != MobEffectCategory.BENEFICIAL) {
+         String key = "fx:" + event.getEffectInstance().getEffect().value().getDescriptionId();
          if (!adapted(p, key)) {
-            learn(p, key, event.getEffectInstance().getEffect().getDisplayName().getString().toUpperCase());
+            learn(p, key, event.getEffectInstance().getEffect().value().getDisplayName().getString().toUpperCase());
          }
       }
    }
@@ -171,7 +170,7 @@ public final class Adapt {
 
    /** /clear aimed at an adapted player (block in hand): refused with a taunt. */
    @SubscribeEvent(priority = EventPriority.HIGHEST)
-   public static void onCommand(net.minecraftforge.event.CommandEvent event) {
+   public static void onCommand(net.neoforged.neoforge.event.CommandEvent event) {
       com.mojang.brigadier.context.CommandContextBuilder<net.minecraft.commands.CommandSourceStack> ctx = event.getParseResults().getContext();
       net.minecraft.commands.CommandSourceStack src = ctx.getSource();
       java.util.LinkedHashSet<ServerPlayer> targets = new java.util.LinkedHashSet<>();
