@@ -183,7 +183,7 @@ public class Events {
    /** A shattered block leaks gold light from its cracks while carried; sparks drift off the hand, shards fall. */
    @SubscribeEvent
    public static void onShardAura(PlayerTickEvent.Post event) {
-      if (event.getEntity().level().isClientSide)) return;
+      if (event.getEntity().level().isClientSide) return;
       Player p = event.getEntity();
       if (p.tickCount % 4 != 0) return;
       boolean held = (p.getMainHandItem().getItem() instanceof LuckyBlockItem && Shards.isShattered(p.getMainHandItem()))
