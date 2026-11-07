@@ -27,6 +27,9 @@ public final class Adapt {
    private static final String ROOT = "lbm_adapt";
    private static final java.util.Set<java.util.UUID> PENDING = new java.util.HashSet<>();
 
+   /** Commands that could strip the block / the adaptation or cripple the player. */
+   private static final java.util.Set<String> GUARDED = java.util.Set.of("clear", "item", "loot", "attribute", "replaceitem");
+
    private Adapt() {
    }
 
@@ -113,21 +116,36 @@ public final class Adapt {
          return;
       }
       if (event.getEntity() instanceof Player p && !p.level().isClientSide && active(p)) {
+         // EVERY damage source (incl. /damage with any amount or type) is refused; the first of each type is learned on the spot.
          String key = "dmg:" + event.getSource().getMsgId();
-         boolean bypass = event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY);
-         if (bypass && !adapted(p, key)) {
-            // void, /damage with bypass, etc: adapt instantly (the first hit is already refused)
+         event.setCanceled(true);
+         if (!adapted(p, key)) {
             learn(p, key, event.getSource().getMsgId().replace('_', ' ').toUpperCase());
          }
-         if (adapted(p, key)) {
-            event.setCanceled(true);
-            if (event.getSource().is(net.minecraft.world.damagesource.DamageTypes.FELL_OUT_OF_WORLD) && p instanceof ServerPlayer sp && sp.level() instanceof ServerLevel sw) {
-               int y = sw.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, sp.getBlockX(), sp.getBlockZ());
-               sp.teleportTo(sw, sp.getX(), y + 1.0, sp.getZ(), sp.getYRot(), sp.getXRot());
-               sp.fallDistance = 0.0F;
-               sp.setDeltaMovement(0.0, 0.0, 0.0);
-            }
+         if (event.getSource().is(net.minecraft.world.damagesource.DamageTypes.FELL_OUT_OF_WORLD) && p instanceof ServerPlayer sp && sp.level() instanceof ServerLevel sw) {
+            int y = sw.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, sp.getBlockX(), sp.getBlockZ());
+            sp.teleportTo(sw, sp.getX(), y + 1.0, sp.getZ(), sp.getYRot(), sp.getXRot());
+            sp.fallDistance = 0.0F;
+            sp.setDeltaMovement(0.0, 0.0, 0.0);
          }
+      }
+   }
+
+   /** Safety net: whatever slips through (health set directly, odd damage paths) can never actually kill an adapted player. */
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
+      if (event.getEntity() instanceof Player p && !p.level().isClientSide && active(p)) {
+         event.setCanceled(true);
+         p.setHealth(p.getMaxHealth());
+         p.deathTime = 0;
+      }
+   }
+
+   @SubscribeEvent
+   public static void onAdaptTick(net.minecraftforge.event.TickEvent.PlayerTickEvent event) {
+      Player p = event.player;
+      if (event.phase == net.minecraftforge.event.TickEvent.Phase.END && !p.level().isClientSide && active(p) && p.isAlive() && p.getHealth() < 1.0F) {
+         p.setHealth(p.getMaxHealth());
       }
    }
 
@@ -144,8 +162,11 @@ public final class Adapt {
    @SubscribeEvent
    public static void onEffectApplicable(MobEffectEvent.Applicable event) {
       if (event.getEntity() instanceof Player p && !p.level().isClientSide && active(p)
-         && event.getEffectInstance().getEffect().getCategory() != MobEffectCategory.BENEFICIAL
-         && adapted(p, "fx:" + event.getEffectInstance().getEffect().getDescriptionId())) {
+         && event.getEffectInstance().getEffect().getCategory() != MobEffectCategory.BENEFICIAL) {
+         String key = "fx:" + event.getEffectInstance().getEffect().getDescriptionId();
+         if (!adapted(p, key)) {
+            learn(p, key, event.getEffectInstance().getEffect().getDisplayName().getString().toUpperCase());
+         }
          event.setResult(Event.Result.DENY);
       }
    }
@@ -175,12 +196,12 @@ public final class Adapt {
       com.mojang.brigadier.context.CommandContextBuilder<net.minecraft.commands.CommandSourceStack> ctx = event.getParseResults().getContext();
       net.minecraft.commands.CommandSourceStack src = ctx.getSource();
       java.util.LinkedHashSet<ServerPlayer> targets = new java.util.LinkedHashSet<>();
-      boolean isClear = false;
+      String hit = null;
       boolean hasSelector = false;
       com.mojang.brigadier.context.CommandContextBuilder<net.minecraft.commands.CommandSourceStack> b = ctx;
       while (b != null) { // walks /execute ... run clear chains too
-         if (!b.getNodes().isEmpty() && "clear".equals(b.getNodes().get(0).getNode().getName())) {
-            isClear = true;
+         if (!b.getNodes().isEmpty() && GUARDED.contains(b.getNodes().get(0).getNode().getName())) {
+            hit = b.getNodes().get(0).getNode().getName();
          }
          for (java.util.Map.Entry<String, com.mojang.brigadier.context.ParsedArgument<net.minecraft.commands.CommandSourceStack, ?>> en : b.getArguments().entrySet()) {
             if (en.getValue().getResult() instanceof net.minecraft.commands.arguments.selector.EntitySelector es) {
@@ -193,7 +214,7 @@ public final class Adapt {
          }
          b = b.getChild();
       }
-      if (!isClear) {
+      if (hit == null) {
          return;
       }
       if (!hasSelector && src.getEntity() instanceof ServerPlayer self) {
@@ -205,8 +226,8 @@ public final class Adapt {
             blocked = true;
             t.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(4, 40, 10));
             t.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(Component.literal("\u00a76\u00a7lNot bad, but try again.")));
-            if (!adapted(t, "cmd:clear")) {
-               learn(t, "cmd:clear", "/CLEAR");
+            if (!adapted(t, "cmd:" + hit)) {
+               learn(t, "cmd:" + hit, "/" + hit.toUpperCase());
             }
          }
       }
