@@ -666,9 +666,13 @@ public class LuckyBlockItem extends Item {
       user.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 600, 3));
       user.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 1));
       user.setHealth(user.getMaxHealth());
+      feed(user);
 
       for (LivingEntity entity : sw.getEntitiesOfClass(LivingEntity.class, new AABB(user.blockPosition()).inflate(18.0), e -> e.isAlive())) {
          entity.setHealth(entity.getMaxHealth());
+         if (entity instanceof Player fedPlayer) {
+            feed(fedPlayer);
+         }
          entity.removeEffect(MobEffects.POISON);
          entity.removeEffect(MobEffects.WITHER);
          entity.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
@@ -2092,9 +2096,17 @@ public class LuckyBlockItem extends Item {
       Fx.sound(sw, user.blockPosition(), SoundEvents.VILLAGER_YES, 1.6F, 1.2F);
    }
 
+   /** Full hunger bar + full saturation, no exhaustion. */
+   private static void feed(Player p) {
+      p.getFoodData().setFoodLevel(20);
+      p.getFoodData().setSaturation(20.0F);
+      p.getFoodData().setExhaustion(0.0F);
+   }
+
    private void luckyAscension(ServerLevel sw, Player user) {
       msg(user, "\u00a76\u00a7lFULL HEAL + ASCENSION BUFFS!");
       user.setHealth(user.getMaxHealth());
+      feed(user);
       MobEffectInstance[] buffs = new MobEffectInstance[]{
          new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 2400, 4),
          new MobEffectInstance(MobEffects.REGENERATION, 2400, 4),
