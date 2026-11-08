@@ -90,7 +90,7 @@ public final class Abilities {
       "Strikes a target, then chains lightning to nearby living targets, up to seven total.",
       "Opens a paginated picker of active vanilla and modded server dimensions. Choose the destination used by travel and banishment.",
       "Transfers movable entities in a 10-block area around your aimed point to the chosen dimension. Includes mobs, dropped items, projectiles, and players; excludes you and your summoned allies.",
-      "Say \"come\": the mob you aim at (and any mobs around it) are completely mind controlled. Any mob in the game, bosses included. They drop every grudge, serve and protect only you under the hardcoded ally law, fight for you and follow you for five minutes.",
+      "Say \"come\": the mob you aim at (and any mobs around it) are completely mind controlled. Any mob in the game, bosses included. They drop every grudge, serve and protect only you under the hardcoded ally law, fight for you and follow you until they die or despawn.",
       "Opens a shimmering rift in front of you for 30 seconds. Step in to travel thousands of blocks away (or to the dimension chosen with Choose Dimension). A twin rift opens at the far end to bring you back. Anything can enter it: other players, mobs, items.",
       "(Shattered) Fires 48 golden shards from your eyes in a spread, each dealing 300 magic damage along its path.",
       "(Shattered) Cracks spread outward from you in five rings, dealing 250 damage and launching everything they cross.",

@@ -985,6 +985,30 @@ public class LuckyBlockItem extends Item {
    }
 
    private void allyTick(ServerLevel sw, Player user, List<Mob> allies, Set<UUID> ids, int remaining, double followSq, boolean discardAtEnd) {
+      if (!discardAtEnd) {
+         // mind control lasts until the mob dies or despawns: follow the owner by UUID, pause while they are offline / elsewhere
+         Player live = sw.getServer().getPlayerList().getPlayer(user.getUUID());
+         boolean alive = false;
+         for (Mob a : allies) {
+            if (!a.isRemoved() && a.isAlive()) {
+               alive = true;
+               break;
+            }
+         }
+         if (!alive) {
+            return;
+         }
+         if (live == null || live.level() != sw || !live.isAlive()) {
+            Scheduler.later(20, () -> this.allyTick(sw, user, allies, ids, remaining, followSq, discardAtEnd));
+            return;
+         }
+         this.allyTickCore(sw, live, allies, ids, remaining, followSq, discardAtEnd);
+         return;
+      }
+      this.allyTickCore(sw, user, allies, ids, remaining, followSq, discardAtEnd);
+   }
+
+   private void allyTickCore(ServerLevel sw, Player user, List<Mob> allies, Set<UUID> ids, int remaining, double followSq, boolean discardAtEnd) {
       boolean any = false;
       LivingEntity attacker = user.getLastHurtByMob();
 
@@ -1973,8 +1997,8 @@ public class LuckyBlockItem extends Item {
          }
          AllyCode.bind(mob, user);
          mob.addEffect(new MobEffectInstance(MobEffects.GLOWING, 100, 0, false, false));
-         mob.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 6000, 1));
-         mob.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 6000, 1));
+         mob.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, MobEffectInstance.INFINITE_DURATION, 1));
+         mob.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, MobEffectInstance.INFINITE_DURATION, 1));
          ids.add(mob.getUUID());
          for (int k = 0; k < 8; k++) {
             int kk = k;
@@ -1987,7 +2011,7 @@ public class LuckyBlockItem extends Item {
       }
       Fx.rune(sw, violet, ParticleTypes.WITCH, c.x, c.y + 0.2, c.z, 7.0, 0.0);
       msg(user, "\u00a75" + chosen.size() + " mind(s) now serve you.");
-      this.allyTick(sw, user, chosen, ids, 6000, 36.0, false);
+      this.allyTick(sw, user, chosen, ids, Integer.MAX_VALUE, 36.0, false);
    }
 
    private static final Map<UUID, Long> RIFT_CD = new HashMap<>();
