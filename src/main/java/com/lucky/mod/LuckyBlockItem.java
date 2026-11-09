@@ -2529,103 +2529,109 @@ public class LuckyBlockItem extends Item {
    }
 
    private void spatialDeflection(ServerLevel sw, Player user) {
-      msg(user, "\u00a75\u00a7lSKY TESSERACT ERASURE!");
+      msg(user, "\u00a75\u00a7lSKY PYRAMID!");
       LuckyBlockItem.Target target = pickTarget(sw, user, 100.0);
       Vec3 center = target.pos();
-      Vec3 skyCenter = center.add(0.0, 22.0, 0.0);
+      Vec3 apex = center.add(0.0, 30.0, 0.0);
       DustParticleOptions gold = new DustParticleOptions(new Vector3f(1.0F, 0.88F, 0.16F), 1.7F);
       DustParticleOptions violet = new DustParticleOptions(new Vector3f(0.45F, 0.14F, 0.9F), 1.45F);
-      Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.END_PORTAL_SPAWN, 4.0F, 0.42F);
-      Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.WARDEN_SONIC_BOOM, 3.4F, 0.5F);
-      Fx.screen(sw, center, 140.0, 0.25F, 0.9F, 12, 11897599);
-      Fx.ring(sw, gold, center.x, center.y + 0.2, center.z, 18.0, 18);
-      Fx.ring(sw, violet, center.x, center.y + 0.35, center.z, 24.0, 18);
-      Fx.line(
-         sw,
-         ParticleTypes.REVERSE_PORTAL,
-         center.x - 18.0,
-         center.y + 0.5,
-         center.z,
-         center.x + 18.0,
-         center.y + 0.5,
-         center.z,
-         18
-      );
-      Fx.line(
-         sw,
-         ParticleTypes.REVERSE_PORTAL,
-         center.x,
-         center.y + 0.5,
-         center.z - 18.0,
-         center.x,
-         center.y + 0.5,
-         center.z + 18.0,
-         18
-      );
-      Fx.laserMark(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 40.0, 0.0);
-      HyperFx hx2 = HyperFx.spawn(sw, skyCenter.x, skyCenter.y, skyCenter.z, "minecraft:white_concrete", "minecraft:purple_concrete", "minecraft:gold_block", "minecraft:sea_lantern");
-      Scheduler.later(60, hx2::remove);
-      AABB captureZone = new AABB(center, center).inflate(22.0);
+      Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.END_PORTAL_SPAWN, 4.0F, 0.5F);
+      Fx.screen(sw, center, 140.0, 0.2F, 0.7F, 10, 16766720);
+      PyramidFx pyramid = new PyramidFx(sw, apex, "minecraft:gold_block", "minecraft:sandstone");
+      AABB zone = new AABB(center, center).inflate(20.0);
 
-      for (LivingEntity entity : sw.getEntitiesOfClass(LivingEntity.class, captureZone, e -> !friend(e, user) && e.distanceToSqr(center) <= 484.0)) {
-         entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60, 0, false, false));
-         entity.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 45, 1, false, false));
-         entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 45, 4, false, false));
+      // ---- phase 1 (0-30): the pyramid appears in the sky and starts absorbing ambient energy ----
+      for (int tick = 0; tick <= 30; tick += 2) {
+         int elapsed = tick;
+         Scheduler.later(tick + 1, () -> {
+            double progress = (double)elapsed / 30.0;
+            pyramid.update(4.0 + progress * 10.0, 6.0 + progress * 2.0, elapsed * 0.03, 0.0);
+            Fx.ring(sw, gold, apex.x, apex.y - 6.0, apex.z, 6.0 + progress * 6.0, 14);
+            Fx.helix(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, apex.x, apex.y - 10.0, apex.z, 3.0 + progress * 3.0, 10.0, elapsed * 0.25);
+            if (elapsed % 6 == 0) {
+               Fx.sound(sw, BlockPos.containing(apex.x, apex.y, apex.z), SoundEvents.BEACON_AMBIENT, 2.5F, 0.6F);
+            }
+         });
       }
 
-      for (int tick = 0; tick <= 42; tick += 2) {
+      // ---- phase 2 (30-70): it grabs mobs and projectiles below and drags them up into itself ----
+      for (int tick = 30; tick <= 70; tick += 2) {
          int elapsed = tick;
-         Scheduler.later(
-            tick + 1,
-            () -> {
-               double progress = (double)elapsed / 42.0;
-               double size = 21.5 - progress * 17.5;
-               hx2.update(size, (double)elapsed * 0.055, 3);
-               Fx.rune(sw, violet, gold, center.x, center.y + 0.2, center.z, 22.0 - progress * 10.0, -(double)elapsed * 0.1);
-               Fx.sevenStars(sw, ParticleTypes.END_ROD, gold, skyCenter.x, skyCenter.y - 6.0, skyCenter.z, 16.0 - progress * 8.0, (double)elapsed * 0.08);
-               Fx.laserMark(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 40.0, (double)elapsed * 0.2);
-               Fx.helix(sw, ParticleTypes.END_ROD, ParticleTypes.REVERSE_PORTAL, center.x, center.y, center.z, 5.0 + (1.0 - progress) * 8.0, 22.0, (double)elapsed * 0.3);
-               if (elapsed % 6 == 0) {
-                  for (int c = 0; c < 6; c++) {
-                     double ca = (double)elapsed * 0.08 + c * Math.PI / 3.0;
-                     Fx.line(sw, c % 2 == 0 ? ParticleTypes.END_ROD : ParticleTypes.ELECTRIC_SPARK,
-                        center.x + Math.cos(ca) * 16.0, center.y + 0.5, center.z + Math.sin(ca) * 16.0,
-                        skyCenter.x, skyCenter.y, skyCenter.z, 6);
-                  }
-                  Fx.burst(sw, ParticleTypes.REVERSE_PORTAL, skyCenter.x, skyCenter.y, skyCenter.z, 9, 0.35, 0.65, 0.35, 0.14);
-                  AABB liftZone = new AABB(center, center).inflate(22.0);
-
-                  for (LivingEntity entity : sw.getEntitiesOfClass(LivingEntity.class, liftZone, e -> !friend(e, user) && e.isAlive() && e.distanceToSqr(center) <= 484.0)) {
-                     Vec3 toFrame = skyCenter.subtract(entity.position().add(0.0, (double)entity.getBbHeight() * 0.5, 0.0));
-                     double distance = toFrame.length();
-                     if (distance > 0.01) {
-                        Vec3 direction = toFrame.scale(1.0 / distance);
-                        push(entity, direction.x * 0.7, Math.max(0.35, direction.y * 1.25), direction.z * 0.7);
-                     }
-                  }
-
-                  for (Projectile projectile : sw.getEntitiesOfClass(Projectile.class, liftZone, p -> p.getOwner() != user && !p.getTags().contains("lbm_ally"))) {
-                     Vec3 toFrame = skyCenter.subtract(projectile.position());
-                     if (toFrame.lengthSqr() > 0.01) {
-                        Vec3 direction = toFrame.normalize();
-                        launch(projectile, direction.x * 1.8, direction.y * 1.8, direction.z * 1.8);
-                     }
+         Scheduler.later(tick + 1, () -> {
+            double progress = (double)(elapsed - 30) / 40.0;
+            pyramid.update(14.0, 8.0 + progress * 2.0, elapsed * 0.03, 0.0);
+            Fx.laserMark(sw, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 44.0, elapsed * 0.2);
+            if (elapsed % 5 == 0) {
+               for (LivingEntity entity : sw.getEntitiesOfClass(LivingEntity.class, zone, e -> !friend(e, user) && e.isAlive() && e.distanceToSqr(center) <= 400.0)) {
+                  entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 40, 0, false, false));
+                  Vec3 toApex = apex.subtract(entity.position().add(0.0, (double)entity.getBbHeight() * 0.5, 0.0));
+                  double dist = toApex.length();
+                  if (dist > 0.01) {
+                     Vec3 dir = toApex.scale(1.0 / dist);
+                     push(entity, dir.x * 0.65, Math.max(0.3, dir.y * 1.1), dir.z * 0.65);
                   }
                }
+
+               for (Projectile projectile : sw.getEntitiesOfClass(Projectile.class, zone, p -> p.getOwner() != user && !p.getTags().contains("lbm_ally"))) {
+                  Vec3 toApex = apex.subtract(projectile.position());
+                  if (toApex.lengthSqr() > 0.01) {
+                     Vec3 dir = toApex.normalize();
+                     launch(projectile, dir.x * 1.6, dir.y * 1.6, dir.z * 1.6);
+                  }
+               }
+
+               Fx.burst(sw, ParticleTypes.REVERSE_PORTAL, apex.x, apex.y, apex.z, 8, 0.3, 0.6, 0.3, 0.12);
             }
-         );
+         });
       }
 
-      Scheduler.later(46, () -> {
-         hx2.update(26.0, 2.0, 4);
-         Scheduler.later(5, hx2::remove);
-         AABB finalZone = new AABB(center, center).inflate(22.0);
+      // ---- phase 3 (70-110): it tears blocks up from the ground and fills itself in ----
+      List<net.minecraft.core.BlockPos> taken = new ArrayList<>();
+      BlockPos ground = BlockPos.containing(center.x, center.y, center.z);
+      for (int dx = -5; dx <= 5; dx++) {
+         for (int dz = -5; dz <= 5; dz++) {
+            if (dx * dx + dz * dz > 25) {
+               continue;
+            }
+            for (int dy = 0; dy >= -3; dy--) {
+               BlockPos p = ground.offset(dx, dy, dz);
+               net.minecraft.world.level.block.state.BlockState st = sw.getBlockState(p);
+               if (!st.isAir() && st.getDestroySpeed(sw, p) >= 0.0F && !st.is(net.minecraft.world.level.block.Blocks.BEDROCK)
+                  && sw.getBlockEntity(p) == null && taken.size() < 40) {
+                  taken.add(p.immutable());
+               }
+            }
+         }
+      }
 
-         for (Projectile projectile : sw.getEntitiesOfClass(Projectile.class, finalZone, p -> p.getOwner() != user && !p.getTags().contains("lbm_ally"))) {
+      for (int i = 0; i < taken.size(); i++) {
+         BlockPos p = taken.get(i);
+         int delay = 70 + i;
+         Scheduler.later(delay, () -> {
+            sw.removeBlock(p, false);
+            Fx.line(sw, ParticleTypes.CLOUD, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5, apex.x, apex.y, apex.z, 10);
+            Fx.sound(sw, p, SoundEvents.STONE_BREAK, 0.8F, 1.3F);
+         });
+      }
+
+      for (int tick = 70; tick <= 110; tick += 2) {
+         int elapsed = tick;
+         Scheduler.later(tick + 1, () -> {
+            double progress = Math.min(1.0, (double)(elapsed - 70) / 40.0);
+            pyramid.update(14.0, 10.0, elapsed * 0.03, progress);
+            Fx.ring(sw, violet, apex.x, apex.y - 1.0, apex.z, 2.0 + progress * 4.0, 12);
+         });
+      }
+
+      // ---- phase 4: boom ----
+      Scheduler.later(115, () -> {
+         pyramid.remove();
+
+         for (Projectile projectile : sw.getEntitiesOfClass(Projectile.class, zone, p -> p.getOwner() != user && !p.getTags().contains("lbm_ally"))) {
             projectile.discard();
          }
 
-         for (Entity entity : sw.getEntities((Entity)null, finalZone, e -> e != user && !friend(e, user) && e.position().distanceToSqr(center) <= 484.0)) {
+         for (Entity entity : sw.getEntities((Entity)null, zone, e -> e != user && !friend(e, user) && e.position().distanceToSqr(center) <= 400.0)) {
             if (entity instanceof Player player) {
                player.hurt(sw.damageSources().magic(), 150.0F);
             } else {
@@ -2634,17 +2640,15 @@ public class LuckyBlockItem extends Item {
          }
 
          Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.GENERIC_EXPLODE, 4.5F, 0.42F);
-         Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.END_PORTAL_SPAWN, 4.5F, 0.35F);
-         Fx.epicImpact(sw, center.add(0.0, 2.0, 0.0), violet, ParticleTypes.REVERSE_PORTAL, 17.0, 11897599);
+         Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.LIGHTNING_BOLT_THUNDER, 4.0F, 0.5F);
+         Fx.epicImpact(sw, apex, violet, ParticleTypes.REVERSE_PORTAL, 17.0, 16766720);
          for (int beamTick = 0; beamTick < 10; beamTick++) {
             int bt = beamTick;
-            Scheduler.later(bt * 2, () -> Fx.beamColumn(sw, ParticleTypes.END_ROD, gold, center.x, center.y, center.z, 45.0, 3.0 + bt * 0.6, (double)bt * 0.5));
+            Scheduler.later(bt * 2, () -> Fx.beamColumn(sw, ParticleTypes.END_ROD, gold, center.x, center.y, center.z, 46.0, 3.0 + bt * 0.6, (double)bt * 0.5));
          }
-         Fx.shatter(sw, ParticleTypes.END_ROD, violet, ParticleTypes.ELECTRIC_SPARK, gold, skyCenter.x, skyCenter.y, skyCenter.z, 6.0, 2.0);
-         Fx.burst(sw, ParticleTypes.FIREWORK, skyCenter.x, skyCenter.y, skyCenter.z, 24, 6.0, 4.0, 6.0, 0.5);
-         Fx.sound(sw, BlockPos.containing(center.x, center.y, center.z), SoundEvents.LIGHTNING_BOLT_THUNDER, 4.0F, 0.5F);
-         Fx.burst(sw, ParticleTypes.POOF, skyCenter.x, skyCenter.y, skyCenter.z, 24, 2.4, 2.4, 2.4, 0.18);
-         Fx.burst(sw, ParticleTypes.PORTAL, skyCenter.x, skyCenter.y, skyCenter.z, 24, 2.8, 2.8, 2.8, 0.26);
+         Fx.shatter(sw, ParticleTypes.END_ROD, violet, ParticleTypes.ELECTRIC_SPARK, gold, apex.x, apex.y, apex.z, 7.0, 2.0);
+         Fx.burst(sw, ParticleTypes.FIREWORK, apex.x, apex.y, apex.z, 24, 6.0, 4.0, 6.0, 0.5);
+         Fx.burst(sw, ParticleTypes.POOF, apex.x, apex.y, apex.z, 24, 2.4, 2.4, 2.4, 0.18);
 
          for (int pulse = 0; pulse < 4; pulse++) {
             int index = pulse;
@@ -2656,7 +2660,6 @@ public class LuckyBlockItem extends Item {
          }
       });
    }
-
    private void absoluteAegis(ServerLevel sw, Player user) {
       msg(user, "\u00a76\u00a7l60-SECOND DAMAGE SHIELD!");
       activateShield(user, 1200);
