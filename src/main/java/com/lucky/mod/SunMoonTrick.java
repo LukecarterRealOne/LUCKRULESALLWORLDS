@@ -126,7 +126,7 @@ public final class SunMoonTrick {
 
    private static void placeQuestionMark(ServerLevel sw, ServerPlayer player, Vec3 dir) {
       Vec3 p = player.getEyePosition().add(dir.scale(70.0));
-      Entity mark = spawn(sw, "{id:\"minecraft:text_display\",Pos:[" + p.x + "," + p.y + "," + p.z + "],text:'{\\"text\\":\\"?\\",\\"color\\":\\"light_purple\\",\\"bold\\":true}',billboard:\"center\",background:0,"
+      Entity mark = spawn(sw, "{id:\"minecraft:text_display\",Pos:[" + p.x + "," + p.y + "," + p.z + "],text:'{\"text\":\"?\",\"color\":\"light_purple\",\"bold\":true}',billboard:\"center\",background:0,"
          + "brightness:{sky:15,block:15},view_range:3.0f,width:80f,height:80f,line_width:200,Tags:[\"lbm_fx\"],"
          + "transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[45f,45f,45f],translation:[0f,0f,0f]}}");
       if (mark != null) {
